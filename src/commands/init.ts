@@ -507,7 +507,7 @@ async function downloadSample(appDir: string, os: string, platform: string) {
       if (!await FS.exists(dirName)) {
         Mkdirp.sync(dirName);
       }
-      await FS.writeFile(path, await file.async("arraybuffer"));
+      await FS.writeTextFile(path, await file.async("string"));
     }
 
     console.log(`Unzipping finished`);
