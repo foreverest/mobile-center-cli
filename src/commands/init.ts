@@ -445,7 +445,7 @@ async function inquireProjectDescription(app: models.AppResponse): Promise<Proje
     moduleName: answers.moduleName as string,
     buildVariant: answers.buildVariant as string,
     projectOrWorkspacePath: answers.projectOrWorkspacePath as string,
-    podfilePath: answers.buildVariant as string
+    podfilePath: answers.podfilePath as string
   };
 }
 
