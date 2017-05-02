@@ -24,6 +24,7 @@ import * as _ from "lodash";
 import collectBuildGradleInfo from "./lib/android/collect-build-gradle-info";
 import collectMainActivityInfo from "./lib/android/collect-main-activity-info";
 import { Questions, Question, Separator } from "../util/interaction/prompt";
+import { glob } from "../util/misc/promisfied-glob";
 
 @help("Integrate Mobile Center SDK into the project")
 export default class IntegrateSDKCommand extends Command {
@@ -204,7 +205,7 @@ export default class IntegrateSDKCommand extends Command {
     }
 
     if (inputManually) {
-      projectDescription = await inquireProjectDescription(appResponse);
+      projectDescription = await inquireProjectDescription(appResponse, path.join(appDir, appDirSuffix));
     }
 
     reportProject(appResponse, projectDescription);
@@ -224,8 +225,8 @@ export default class IntegrateSDKCommand extends Command {
               const mainActivity = await collectMainActivityInfo(buildGradle, androidJavaProjectDescription.buildVariant);
 
               await out.progress("Integrating SDK into the project...",
-                  injectAndroidJava(buildGradle, mainActivity, "0.6.1", // TODO: Retrieve SDK version from somewhere
-                      appResponse.appSecret, sdkModules));
+                injectAndroidJava(buildGradle, mainActivity, "0.6.1", // TODO: Retrieve SDK version from somewhere
+                  appResponse.appSecret, sdkModules));
 
               break;
           }
@@ -417,18 +418,36 @@ async function inquireBranchName(branches: models.BranchStatus[]): Promise<strin
   return branchName === inputManuallyText ? null : branchName;
 }
 
-async function inquireProjectDescription(app: models.AppResponse): Promise<ProjectDescription> {
-  const questions: Questions = [{
-    type: "input",
-    name: "moduleName",
-    message: "Gradle module name",
-    when: () => app.os === "Android" && app.platform === "Java"
-  }, {
-    type: "input",
-    name: "buildVariant",
-    message: "Build variant",
-    when: () => app.os === "Android" && app.platform === "Java"
-  }, {
+async function inquireProjectDescription(app: models.AppResponse, dir: string): Promise<ProjectDescription> {
+  if (app.os === "Android" && app.platform === "Java") {
+    let questions: Questions = [{
+      type: "list",
+      name: "moduleName",
+      message: "Gradle module name",
+      choices: await findGradleModules(dir)
+    }];
+    const answers = await prompt.question(questions);
+    const moduleName = answers.moduleName as string;
+    if (moduleName) {
+      const filePath = path.join(dir, moduleName, "build.gradle");
+      const buildGradle = await collectBuildGradleInfo(filePath);
+      if (buildGradle.buildVariants && buildGradle.buildVariants.length) {
+        let questions: Questions = [{
+          type: "list",
+          name: "buildVariant",
+          message: "Build variant",
+          choices: buildGradle.buildVariants
+        }];
+        const answers = await prompt.question(questions);
+        return {
+          moduleName,
+          buildVariant: answers.buildVariant as string
+        };
+      } else
+        throw new Error(`Incorrect file format: ${filePath}`);
+    }
+  }
+  let questions: Questions = [{
     type: "input",
     name: "projectOrWorkspacePath",
     message: "Path to project or workspace",
@@ -442,8 +461,6 @@ async function inquireProjectDescription(app: models.AppResponse): Promise<Proje
   const answers = await prompt.question(questions);
 
   return {
-    moduleName: answers.moduleName as string,
-    buildVariant: answers.buildVariant as string,
     projectOrWorkspacePath: answers.projectOrWorkspacePath as string,
     podfilePath: answers.podfilePath as string
   };
@@ -513,4 +530,18 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
 
     console.log(`Unzipping finished`);
   }
+}
+
+async function findGradleModules(dir: string): Promise<string[]> {
+  const files = await glob(path.join(dir, "**/!(android-sample)/build.gradle")); // TODO: Handle fake modules
+  const modules: string[] = [];
+  for (let file of files) {
+    let contents = await fs.readTextFile(file);
+    if (/apply plugin:\s*['"]com\.android\.application['"]/m.test(contents)) {
+      const matches = path.relative(dir, file).match(/\/?(.+)[\/\\]build\.gradle/);
+      if (matches && matches[1])
+        modules.push(matches[1]);
+    }
+  }
+  return modules;
 }
