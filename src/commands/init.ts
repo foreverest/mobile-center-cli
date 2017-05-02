@@ -83,6 +83,7 @@ export default class IntegrateSDKCommand extends Command {
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
     const appDir = Path.isAbsolute(this.appDir || "./") ? this.appDir : Path.join(Process.cwd(), this.appDir || "./");
+    let appDirSuffix = "";
 
     let app: DefaultApp;
     let appResponse: models.AppResponse;
@@ -96,7 +97,7 @@ export default class IntegrateSDKCommand extends Command {
     const platform = sampleAppDetails.platform;
 
     if (sampleApp) {
-      await downloadSample(appDir, os, platform);
+      appDirSuffix = await downloadSample(appDir, os, platform);
     }
 
     if (!appName && !createNew) {
@@ -219,7 +220,7 @@ export default class IntegrateSDKCommand extends Command {
           switch (appResponse.platform) {
             case "Java":
               const androidJavaProjectDescription = projectDescription as IAndroidJavaProjectDescription;
-              const buildGradle = await collectBuildGradleInfo(Path.join(appDir, androidJavaProjectDescription.moduleName, "build.gradle"),
+              const buildGradle = await collectBuildGradleInfo(Path.join(appDir, appDirSuffix, androidJavaProjectDescription.moduleName, "build.gradle"),
                   androidJavaProjectDescription.buildVariant);
               const mainActivity = await collectMainActivityInfo(buildGradle);
 
@@ -234,8 +235,8 @@ export default class IntegrateSDKCommand extends Command {
         case "iOS":
           const iosObjectiveCSwiftProjectDescription = projectDescription as IIosObjectiveCSwiftProjectDescription;
           await out.progress("Integrating SDK into the project...",
-            injectSdkIos(Path.join(appDir, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
-              Path.join(appDir, iosObjectiveCSwiftProjectDescription.podfilePath),
+            injectSdkIos(Path.join(appDir, appDirSuffix, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
+              Path.join(appDir, appDirSuffix, iosObjectiveCSwiftProjectDescription.podfilePath),
               appResponse.appSecret,
               sdkModules/*,
               "sdk version"*/));
@@ -449,25 +450,26 @@ async function inquireProjectDescription(app: models.AppResponse): Promise<Proje
   };
 }
 
-async function downloadSample(appDir: string, os: string, platform: string) {
+async function downloadSample(appDir: string, os: string, platform: string): Promise<string> {
 
-  const uri = getArchiveUrl(os, platform);
+  const { uri, name } = getArchiveUrl(os, platform);
   const response = await downloadFile(uri);
-  await unzip(appDir, response.result);
+  await unzip(Path.join(appDir, name), response.result);
+  return name;
 
-  function getArchiveUrl(os: string, platform: string) {
+  function getArchiveUrl(os: string, platform: string): { uri: string, name: string } {
     switch (os) {
       case "Android":
         switch (platform) {
-          case "Java": return "https://github.com/MobileCenter/quickstart-android/archive/master.zip";
+          case "Java": return { uri: "https://github.com/MobileCenter/quickstart-android/archive/master.zip", name: "android-sample" };
           case "React-Native": break;
-          case "Xamarin": return "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip";
+          case "Xamarin": return { uri: "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip", name: "xamarin-sample" };
         }
       case "iOS":
         switch (platform) {
-          case "Objective-C-Swift": return "https://github.com/MobileCenter/quickstart-ios/archive/master.zip";
+          case "Objective-C-Swift": return { uri: "https://github.com/MobileCenter/quickstart-ios/archive/master.zip", name: "ios-sample" };
           case "React-Native": break;
-          case "Xamarin": return "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip";
+          case "Xamarin": return { uri: "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip", name: "xamarin-sample" };
         }
     }
 
