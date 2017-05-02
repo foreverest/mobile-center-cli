@@ -5,16 +5,12 @@ import * as _ from "lodash"
 import { CodeBag, CodeWalker } from "../util/code-walker";
 import removeComments from "../util/remove-comments";
 
-export default async function collectBuildGradleInfo(buildGradlePath: string, buildVariantName: string): Promise<IBuildGradle> {
+export default async function collectBuildGradleInfo(buildGradlePath: string): Promise<IBuildGradle> {
   let contents = await fs.readTextFile(buildGradlePath, "utf8");
 
   const buildVariants = await getBuildVariants(contents);
-  const buildVariant = _.find(buildVariants, x => x.name === buildVariantName);
-  if (!buildVariant)
-    throw new Error("Incorrect build variant");
-
-  const sourceSets = await getSourceSets(contents, buildVariant);
-
+  const sourceSets = await getSourceSets(contents);
+  
   const info = analyze(contents);
 
   return {
@@ -72,44 +68,22 @@ function getBuildVariant(buildType: string, productFlavors?: string[]): IBuildVa
   };
 }
 
-async function getSourceSets(buildGradleContents: string, buildVariant: IBuildVariant): Promise<ISourceSet[]> {
-  let sourceSets: ISourceSet[] = []
-
-  sourceSets.push({ name: buildVariant.name });
-  if (buildVariant.productFlavors && buildVariant.productFlavors.length) {
-    sourceSets.push({ name: buildVariant.buildType });
-    sourceSets.push(...buildVariant.productFlavors.map(x => ({ name: x })));
-  }
-  sourceSets.push({ name: "main" });
-
+async function getSourceSets(buildGradleContents: string): Promise<ISourceSet[]> {
   const matches = buildGradleContents.match(/(android\s*{[^]*})/);
   let buildGradle = await gjs.parseText(matches && matches.length ? matches[0] : buildGradleContents);
 
+  const sourceSets: ISourceSet[] = [];
   if (buildGradle && buildGradle.android && buildGradle.android.sourceSets) {
-    Object.keys(buildGradle.android.sourceSets).forEach((sourceSetName: string) => {
-      let sourceSet = _.find(sourceSets, x => x.name === sourceSetName);
-      if (sourceSet) {
-        sourceSet.manifestSrcFile = buildGradle.android.sourceSets[sourceSetName]["manifest.srcFile"];
-        sourceSet.javaSrcDirs = buildGradle.android.sourceSets[sourceSetName]["java.srcDirs"];
+    sourceSets.push(...Object.keys(buildGradle.android.sourceSets).map(sourceSetName => {
+      return <ISourceSet>{
+        name: sourceSetName,
+        manifestSrcFile: buildGradle.android.sourceSets[sourceSetName]["manifest.srcFile"],
+        javaSrcDirs: buildGradle.android.sourceSets[sourceSetName]["java.srcDirs"]
       }
-    });
+    }));
   }
 
-  sourceSets.forEach(sourceSet => {
-    sourceSet.manifestSrcFile = sourceSet.manifestSrcFile ?
-      removeQuotes(sourceSet.manifestSrcFile) :
-      `src/${sourceSet.name}/AndroidManifest.xml`;
-    sourceSet.javaSrcDirs = sourceSet.javaSrcDirs && sourceSet.javaSrcDirs.length ?
-      sourceSet.javaSrcDirs.map(removeQuotes) :
-      [`src/${sourceSet.name}/java`];
-  });
-
   return sourceSets;
-}
-
-function removeQuotes(text: string): string {
-  let matches = text.trim().match(/^(['"])([^]*)\1$/);
-  return matches && matches[2] ? matches[2] : "";
 }
 
 function analyze(contents: string): CleanBag {

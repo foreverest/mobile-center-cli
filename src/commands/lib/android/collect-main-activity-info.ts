@@ -1,4 +1,4 @@
-import { IBuildGradle, ISourceSet } from './models/build-gradle';
+import { IBuildGradle, ISourceSet, IBuildVariant } from './models/build-gradle';
 import { IMainActivity, IImportStatement, IStartSdkStatement } from "./models/main-activity";
 import * as fs from "async-file";
 import * as path from "path";
@@ -8,11 +8,16 @@ import { ActivityWalker, ActivityBag } from "./activity-walker";
 import removeComments from "../util/remove-comments";
 import { MobileCenterSdkModule } from "../models/mobilecenter-sdk-module";
 
-export default async function collectMainActivityInfo(buildGradle: IBuildGradle): Promise<IMainActivity> {
-  const fullName = await getMainActivityName(buildGradle.path, buildGradle.sourceSets);
+export default async function collectMainActivityInfo(buildGradle: IBuildGradle, buildVariantName: string): Promise<IMainActivity> {
+  const buildVariant = _.find(buildGradle.buildVariants, x => x.name === buildVariantName);
+  if (!buildVariant)
+    throw new Error("Incorrect build variant");
+
+  const sourceSets = getSourceSets(buildVariant);
+  const fullName = await getMainActivityName(buildGradle.path, sourceSets);
   const name = fullName.match(/\w+$/)[0];
   const { mainActivityPath, mainActivityContents} = 
-    await readMainActivity(buildGradle.path, buildGradle.sourceSets, fullName);
+    await readMainActivity(buildGradle.path, sourceSets, fullName);
   
   const info = analyze(mainActivityContents, name);
 
@@ -26,7 +31,35 @@ export default async function collectMainActivityInfo(buildGradle: IBuildGradle)
   };
 }
 
+function getSourceSets(buildVariant: IBuildVariant): ISourceSet[] {
+  let sourceSets: ISourceSet[] = []
+
+  sourceSets.push({ name: buildVariant.name });
+  if (buildVariant.productFlavors && buildVariant.productFlavors.length) {
+    sourceSets.push({ name: buildVariant.buildType });
+    sourceSets.push(...buildVariant.productFlavors.map(x => ({ name: x })));
+  }
+  sourceSets.push({ name: "main" });
+
+  sourceSets.forEach(sourceSet => {
+    sourceSet.manifestSrcFile = sourceSet.manifestSrcFile ?
+      removeQuotes(sourceSet.manifestSrcFile) :
+      `src/${sourceSet.name}/AndroidManifest.xml`;
+    sourceSet.javaSrcDirs = sourceSet.javaSrcDirs && sourceSet.javaSrcDirs.length ?
+      sourceSet.javaSrcDirs.map(removeQuotes) :
+      [`src/${sourceSet.name}/java`];
+  });
+
+  return sourceSets;
+}
+
+function removeQuotes(text: string): string {
+  let matches = text.trim().match(/^(['"])([^]*)\1$/);
+  return matches && matches[2] ? matches[2] : "";
+}
+
 async function getMainActivityName(projectPath: string, sourceSets: ISourceSet[]): Promise<string> {
+
   for (let sourceSet of sourceSets.filter(x => x.manifestSrcFile)) {
     const manifestPath = path.join(path.dirname(projectPath), sourceSet.manifestSrcFile);
     try {

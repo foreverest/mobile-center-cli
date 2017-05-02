@@ -220,9 +220,8 @@ export default class IntegrateSDKCommand extends Command {
           switch (appResponse.platform) {
             case "Java":
               const androidJavaProjectDescription = projectDescription as IAndroidJavaProjectDescription;
-              const buildGradle = await collectBuildGradleInfo(path.join(appDir, appDirSuffix, androidJavaProjectDescription.moduleName, "build.gradle"),
-                  androidJavaProjectDescription.buildVariant);
-              const mainActivity = await collectMainActivityInfo(buildGradle);
+              const buildGradle = await collectBuildGradleInfo(path.join(appDir, appDirSuffix, androidJavaProjectDescription.moduleName, "build.gradle"));
+              const mainActivity = await collectMainActivityInfo(buildGradle, androidJavaProjectDescription.buildVariant);
 
               await out.progress("Integrating SDK into the project...",
                   injectAndroidJava(buildGradle, mainActivity, "0.6.1", // TODO: Retrieve SDK version from somewhere
