@@ -447,23 +447,22 @@ async function inquireProjectDescription(app: models.AppResponse, dir: string): 
         throw new Error(`Incorrect file format: ${filePath}`);
     }
   }
-  let questions: Questions = [{
-    type: "input",
-    name: "projectOrWorkspacePath",
-    message: "Path to project or workspace",
-    when: () => app.os === "iOS" && app.platform === "Objective-C-Swift"
-  }, {
-    type: "input",
-    name: "podfilePath",
-    message: "Path to podfile",
-    when: () => app.os === "iOS" && app.platform === "Objective-C-Swift"
-  }];
-  const answers = await prompt.question(questions);
 
-  return {
-    projectOrWorkspacePath: answers.projectOrWorkspacePath as string,
-    podfilePath: answers.podfilePath as string
-  };
+  if (app.os === "iOS" && app.platform === "Objective-C-Swift") {
+    let questions: Questions = [{
+      type: "list",
+      name: "projectOrWorkspacePath",
+      message: "Path to project or workspace",
+      choices: await findProjectsAndWorkspaces(dir)
+    }];
+    const answers = await prompt.question(questions);
+    return {
+      projectOrWorkspacePath: answers.projectOrWorkspacePath as string,
+      podfilePath: "./podfile" //TODO: ???
+    };
+  }
+
+  throw new Error(`Unsupported OS/Platform: ${app.os}/${app.platform}`);
 }
 
 async function downloadSample(appDir: string, os: string, platform: string): Promise<string> {
@@ -544,4 +543,9 @@ async function findGradleModules(dir: string): Promise<string[]> {
     }
   }
   return modules;
+}
+
+async function findProjectsAndWorkspaces(dir: string): Promise<string[]> {
+  const dirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
+  return dirs.map(d => path.relative(dir, d));
 }
