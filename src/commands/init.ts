@@ -5,13 +5,13 @@ import { CommandArgs, CommandResult, help, failure, ErrorCodes, success, getCurr
 import { out, prompt } from "../util/interaction";
 import { DefaultApp, toDefaultApp } from "../util/profile";
 import { MobileCenterClient, clientRequest, models, ClientResponse } from "../util/apis";
-import * as Process from "process";
-import * as Path from "path";
-import * as Request from "request";
+import * as process from "process";
+import * as path from "path";
+import * as request from "request";
 import * as JsZip from "jszip";
 import * as JsZipHelper from "../util/misc/jszip-helper";
-import * as FS from "async-file";
-import * as Mkdirp from "mkdirp";
+import * as fs from "async-file";
+import * as mkdirp from "mkdirp";
 
 const debug = require("debug")("mobile-center-cli:commands:apps:list");
 import { inspect } from "util";
@@ -82,7 +82,7 @@ export default class IntegrateSDKCommand extends Command {
   sampleApp: boolean;
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
-    const appDir = Path.isAbsolute(this.appDir || "./") ? this.appDir : Path.join(Process.cwd(), this.appDir || "./");
+    const appDir = path.isAbsolute(this.appDir || "./") ? this.appDir : path.join(process.cwd(), this.appDir || "./");
     let appDirSuffix = "";
 
     let app: DefaultApp;
@@ -220,7 +220,7 @@ export default class IntegrateSDKCommand extends Command {
           switch (appResponse.platform) {
             case "Java":
               const androidJavaProjectDescription = projectDescription as IAndroidJavaProjectDescription;
-              const buildGradle = await collectBuildGradleInfo(Path.join(appDir, appDirSuffix, androidJavaProjectDescription.moduleName, "build.gradle"),
+              const buildGradle = await collectBuildGradleInfo(path.join(appDir, appDirSuffix, androidJavaProjectDescription.moduleName, "build.gradle"),
                   androidJavaProjectDescription.buildVariant);
               const mainActivity = await collectMainActivityInfo(buildGradle);
 
@@ -235,8 +235,8 @@ export default class IntegrateSDKCommand extends Command {
         case "iOS":
           const iosObjectiveCSwiftProjectDescription = projectDescription as IIosObjectiveCSwiftProjectDescription;
           await out.progress("Integrating SDK into the project...",
-            injectSdkIos(Path.join(appDir, appDirSuffix, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
-              Path.join(appDir, appDirSuffix, iosObjectiveCSwiftProjectDescription.podfilePath),
+            injectSdkIos(path.join(appDir, appDirSuffix, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
+              path.join(appDir, appDirSuffix, iosObjectiveCSwiftProjectDescription.podfilePath),
               appResponse.appSecret,
               sdkModules/*,
               "sdk version"*/));
@@ -454,7 +454,7 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
 
   const { uri, name } = getArchiveUrl(os, platform);
   const response = await downloadFile(uri);
-  await unzip(Path.join(appDir, name), response.result);
+  await unzip(path.join(appDir, name), response.result);
   return name;
 
   function getArchiveUrl(os: string, platform: string): { uri: string, name: string } {
@@ -479,7 +479,7 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
   async function downloadFile(uri: string): Promise<ClientResponse<Buffer>> {
     console.log(`Downloading the file.. ${uri}`);
     return new Promise<ClientResponse<Buffer>>((resolve, reject) => {
-      Request.get(uri, { encoding: null }, (error, response, body: Buffer) => {
+      request.get(uri, { encoding: null }, (error, response, body: Buffer) => {
         if (error) {
           reject(error);
         } else {
@@ -504,12 +504,12 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
         continue;
       }
 
-      const path = Path.join(directory, match[1]);
-      const dirName = Path.dirname(path);
-      if (!await FS.exists(dirName)) {
-        Mkdirp.sync(dirName);
+      const filePath = path.join(directory, match[1]);
+      const dirName = path.dirname(filePath);
+      if (!await fs.exists(dirName)) {
+        mkdirp.sync(dirName);
       }
-      await FS.writeTextFile(path, await file.async("string"));
+      await fs.writeTextFile(filePath, await file.async("string"));
     }
 
     console.log(`Unzipping finished`);
