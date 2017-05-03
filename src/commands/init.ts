@@ -468,8 +468,8 @@ async function inquireProjectDescription(app: models.AppResponse, dir: string): 
 async function downloadSample(appDir: string, os: string, platform: string): Promise<string> {
 
   const { uri, name } = getArchiveUrl(os, platform);
-  const response = await downloadFile(uri);
-  await unzip(path.join(appDir, name), response.result);
+  const response = await out.progress(`Downloading the file... ${uri}`, downloadFile(uri));
+  await out.progress("Unzipping the archive...", unzip(path.join(appDir, name), response.result));
   return name;
 
   function getArchiveUrl(os: string, platform: string): { uri: string, name: string } {
@@ -492,13 +492,11 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
   }
 
   async function downloadFile(uri: string): Promise<ClientResponse<Buffer>> {
-    console.log(`Downloading the file.. ${uri}`);
     return new Promise<ClientResponse<Buffer>>((resolve, reject) => {
       request.get(uri, { encoding: null }, (error, response, body: Buffer) => {
         if (error) {
           reject(error);
         } else {
-          console.log(`Downloading finished`);
           resolve({ result: body, response });
         }
       });
@@ -506,8 +504,6 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
   }
 
   async function unzip(directory: string, buffer: Buffer) {
-    console.log(`Unzipping the archive..`);
-
     const zip = await new JsZip().loadAsync(buffer);
     for (const file of _.values(zip.files) as JSZipObject[]) {
       if (file.dir) {
@@ -526,8 +522,6 @@ async function downloadSample(appDir: string, os: string, platform: string): Pro
       }
       await fs.writeTextFile(filePath, await file.async("string"));
     }
-
-    console.log(`Unzipping finished`);
   }
 }
 
