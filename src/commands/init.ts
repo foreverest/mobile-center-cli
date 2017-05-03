@@ -124,7 +124,10 @@ export default class IntegrateSDKCommand extends Command {
         return failure(ErrorCodes.Exception, "Unknown error when loading apps");
       }
 
-      appName = await inquireAppName(appsResponse.result);
+      appName = await inquireAppName(appsResponse.result.filter(app => 
+        !os || app.os === os &&
+        !platform || app.platform === platform));
+        
       if (!appName)
         createNew = true;
     }
