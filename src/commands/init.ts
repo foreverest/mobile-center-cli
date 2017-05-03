@@ -91,11 +91,26 @@ export default class IntegrateSDKCommand extends Command {
     let appName = this.app;
     let createNew = this.createNew;
     let branchName = this.branchName;
+    let os = this.os;
+    let platform = this.platform;
 
-    const sampleAppDetails = await inquireSampleApp(this.sampleApp, this.os, this.platform);
-    const sampleApp = sampleAppDetails.confirm;
-    const os = sampleAppDetails.os;
-    const platform = sampleAppDetails.platform;
+    const currentDirApp = await detectCurrentDirApp(appDir);
+    let useDetectedApp;
+    if (currentDirApp) {
+      useDetectedApp = await prompt.confirm(`An existing ${currentDirApp.os}/${currentDirApp.platform} is detected. Do you want to use it?`);
+      if (useDetectedApp) {
+        os = currentDirApp.os;
+        platform = currentDirApp.platform;
+      }
+    }
+
+    let sampleApp: boolean;
+    if (!useDetectedApp) {
+      const sampleAppDetails = await inquireSampleApp(this.sampleApp, this.os, this.platform);
+      sampleApp = sampleAppDetails.confirm;
+      os = sampleAppDetails.os;
+      platform = sampleAppDetails.platform;
+    }
 
     if (sampleApp) {
       appDirSuffix = await downloadSample(appDir, os, platform);
@@ -542,4 +557,14 @@ async function findGradleModules(dir: string): Promise<string[]> {
 async function findProjectsAndWorkspaces(dir: string): Promise<string[]> {
   const dirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
   return dirs.map(d => path.relative(dir, d));
+}
+
+async function detectCurrentDirApp(dir: string): Promise<{ os: string, platform: string }> {
+  const xcodeDirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
+  if (xcodeDirs.length)
+    return { os: 'iOS', platform: "Objective-C-Swift" };
+  const gradleFiles = await glob(path.join(dir, "build.gradle"));
+  if (gradleFiles.length)
+    return { os: 'Android', platform: "Java" };
+  return null;
 }
