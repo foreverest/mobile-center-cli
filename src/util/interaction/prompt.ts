@@ -90,4 +90,18 @@ export namespace prompt {
     // don't line up.
     return Promise.resolve(inquirer.prompt(questions));
   };
+
+  /**
+   * Automatically picks up an option if it's the only choice in the list
+   * @param question Question object to ask
+   */
+  export function autoAnsweringQuestion(question: inquirer.Question): Promise<inquirer.Answers> {
+  if ((question.type === "list") && question.choices && question.choices.length === 1) {
+    const pr: any = inquirer.prompt(question);
+    pr.ui.activePrompt.onSubmit((<any>question.choices)[0]);
+    return pr;
+  }
+    
+  return prompt.question(question);
+}
 }

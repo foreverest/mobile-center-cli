@@ -124,10 +124,10 @@ export default class IntegrateSDKCommand extends Command {
         return failure(ErrorCodes.Exception, "Unknown error when loading apps");
       }
 
-      appName = await inquireAppName(appsResponse.result.filter(app => 
+      appName = await inquireAppName(appsResponse.result.filter(app =>
         !os || app.os === os &&
         !platform || app.platform === platform));
-        
+
       if (!appName)
         createNew = true;
     }
@@ -327,7 +327,7 @@ async function inquireAppName(apps: models.AppResponse[]): Promise<string> {
     message: "Please choose a Mobile Center app to work with",
     choices: [createNewText].concat(apps.map(app => `${app.owner.name}/${app.name}`))
   };
-  const answers = await prompt.question(question);
+  const answers = await prompt.autoAnsweringQuestion(question);
 
   let appName = answers.appName as string;
 
@@ -429,7 +429,7 @@ async function inquireBranchName(branches: models.BranchStatus[]): Promise<strin
     message: "Where do you want to get project settings from?",
     choices: [inputManuallyText].concat(branches.map(branch => branch.lastBuild.sourceBranch))
   };
-  const answers = await prompt.question(question);
+  const answers = await prompt.autoAnsweringQuestion(question);
 
   let branchName = answers.branchName as string;
 
@@ -438,25 +438,25 @@ async function inquireBranchName(branches: models.BranchStatus[]): Promise<strin
 
 async function inquireProjectDescription(app: models.AppResponse, dir: string): Promise<ProjectDescription> {
   if (app.os === "Android" && app.platform === "Java") {
-    let questions: Questions = [{
+    let question: Question = {
       type: "list",
       name: "moduleName",
       message: "Gradle module name",
       choices: await findGradleModules(dir)
-    }];
-    const answers = await prompt.question(questions);
+    };
+    const answers = await prompt.autoAnsweringQuestion(question);
     const moduleName = answers.moduleName as string;
     if (moduleName) {
       const filePath = path.join(dir, moduleName, "build.gradle");
       const buildGradle = await collectBuildGradleInfo(filePath);
       if (buildGradle.buildVariants && buildGradle.buildVariants.length) {
-        let questions: Questions = [{
+        let questions: Question = {
           type: "list",
           name: "buildVariant",
           message: "Build variant",
           choices: buildGradle.buildVariants
-        }];
-        const answers = await prompt.question(questions);
+        };
+        const answers = await prompt.autoAnsweringQuestion(questions);
         return {
           moduleName,
           buildVariant: answers.buildVariant as string
