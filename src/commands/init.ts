@@ -1,30 +1,32 @@
 // sdk integrate command
 
-import { shortName, longName, hasArg } from './../util/commandline/option-decorators';
-import { CommandArgs, CommandResult, help, failure, ErrorCodes, success, getCurrentApp, required, defaultValue, Command } from "../util/commandline";
-import { out, prompt } from "../util/interaction";
-import { DefaultApp, toDefaultApp } from "../util/profile";
-import { MobileCenterClient, clientRequest, models, ClientResponse } from "../util/apis";
-import * as process from "process";
-import * as path from "path";
-import * as request from "request";
 import * as JsZip from "jszip";
 import * as JsZipHelper from "../util/misc/jszip-helper";
+import * as _ from "lodash";
 import * as fs from "async-file";
 import * as mkdirp from "mkdirp";
+import * as path from "path";
+import * as process from "process";
+import * as request from "request";
 
-const debug = require("debug")("mobile-center-cli:commands:apps:list");
-import { inspect } from "util";
-import { injectAndroidJava, checkAndroidJava } from "./lib/android/operations";
-import { injectSdkIos } from "./lib/ios/inject-sdk-ios";
+import { ClientResponse, MobileCenterClient, clientRequest, models } from "../util/apis";
+import { Command, CommandArgs, CommandResult, ErrorCodes, defaultValue, failure, getCurrentApp, help, required, success } from "../util/commandline";
+import { DefaultApp, toDefaultApp } from "../util/profile";
+import { IAndroidJavaProjectDescription, IIosObjectiveCSwiftProjectDescription, ProjectDescription, getProjectDescription } from "./lib/project-description";
+import { Question, Questions, Separator } from "../util/interaction/prompt";
+import { checkAndroidJava, injectAndroidJava } from "./lib/android/operations";
+import { hasArg, longName, shortName } from './../util/commandline/option-decorators';
+import { out, prompt } from "../util/interaction";
+
 import { MobileCenterSdkModule } from "./lib/models/mobilecenter-sdk-module";
-import { reportProject } from "./lib/format-project";
-import { getProjectDescription, IAndroidJavaProjectDescription, IIosObjectiveCSwiftProjectDescription, ProjectDescription } from "./lib/project-description";
-import * as _ from "lodash";
 import collectBuildGradleInfo from "./lib/android/collect-build-gradle-info";
 import collectMainActivityInfo from "./lib/android/collect-main-activity-info";
-import { Questions, Question, Separator } from "../util/interaction/prompt";
 import { glob } from "../util/misc/promisfied-glob";
+import { injectSdkIos } from "./lib/ios/inject-sdk-ios";
+import { inspect } from "util";
+import { reportProject } from "./lib/format-project";
+
+const debug = require("debug")("mobile-center-cli:commands:apps:list");
 
 @help("Integrate Mobile Center SDK into the project")
 export default class IntegrateSDKCommand extends Command {
@@ -36,7 +38,7 @@ export default class IntegrateSDKCommand extends Command {
   @shortName("a")
   @longName("app")
   @hasArg
-  app: string;
+  appName: string;
 
   @help("Specify application for command to act on")
   @shortName("n")
@@ -83,16 +85,20 @@ export default class IntegrateSDKCommand extends Command {
   sampleApp: boolean;
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
-    const appDir = path.isAbsolute(this.appDir || "./") ? this.appDir : path.join(process.cwd(), this.appDir || "./");
-    let appDirSuffix = "";
-
-    let app: DefaultApp;
-    let appResponse: models.AppResponse;
-    let appName = this.app;
+    let appName = this.appName;
     let createNew = this.createNew;
     let branchName = this.branchName;
     let os = this.os;
     let platform = this.platform;
+    let appDir = this.appDir || "./";
+    if (!path.isAbsolute(appDir)) {
+      appDir = path.join(process.cwd(), appDir);
+    }
+    
+    let appDirSuffix = "";
+
+    let app: DefaultApp;
+    let appResponse: models.AppResponse;
 
     const currentDirApp = await detectCurrentDirApp(appDir);
     let useDetectedApp;
@@ -106,7 +112,7 @@ export default class IntegrateSDKCommand extends Command {
 
     let sampleApp: boolean;
     if (!useDetectedApp) {
-      const sampleAppDetails = await inquireSampleApp(this.sampleApp, this.os, this.platform);
+      const sampleAppDetails = await inquireSampleApp(this.sampleApp, os, platform);
       sampleApp = sampleAppDetails.confirm;
       os = sampleAppDetails.os;
       platform = sampleAppDetails.platform;
@@ -161,7 +167,7 @@ export default class IntegrateSDKCommand extends Command {
     } else { // !createNew
       app = toDefaultApp(appName);
       if (!app) {
-        return failure(ErrorCodes.Exception, `'${this.app}' is not a valid application id`);
+        return failure(ErrorCodes.Exception, `'${appName}' is not a valid application id`);
       }
 
       const appDetailsResponse = await out.progress("Getting app details ...",
