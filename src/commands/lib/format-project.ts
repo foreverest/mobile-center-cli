@@ -1,8 +1,9 @@
-import { out } from "../../util/interaction";
-import { models } from "../../util/apis";
-import { ProjectDescription, IAndroidJavaProjectDescription, IIosObjectiveCSwiftProjectDescription } from "./project-description";
+import { IAndroidJavaProjectDescription, IIosObjectiveCSwiftProjectDescription, ProjectDescription } from "./models/project-description";
 
-export function reportProject(app: models.AppResponse, projectDescription: ProjectDescription): void {
+import { IRemoteApp } from "./models/i-remote-app";
+import { out } from "../../util/interaction";
+
+export function reportProject(app: IRemoteApp, projectDescription: ProjectDescription): void {
   reportApp(app);
 
   switch (app.os) {
@@ -27,10 +28,10 @@ export function reportProject(app: models.AppResponse, projectDescription: Proje
   }
 }
 
-function reportApp(app: models.AppResponse): void {
+function reportApp(app: IRemoteApp): void {
   out.report(
     [
-      ["App", "name"],
+      ["App", "appName"],
       ["App secret", "appSecret"],
       ["OS", "os"],
       ["Platform", "platform"]

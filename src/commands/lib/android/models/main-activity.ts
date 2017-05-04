@@ -1,4 +1,4 @@
-import { ISnippet } from "../../models/isnippet";
+import { ISnippet } from "../../models/i-snippet";
 import { MobileCenterSdkModule } from "../../models/mobilecenter-sdk-module";
 
 export interface IMainActivity {

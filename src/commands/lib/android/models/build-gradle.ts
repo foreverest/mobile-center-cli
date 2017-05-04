@@ -1,4 +1,4 @@
-import { ISnippet } from './../../models/isnippet';
+import { ISnippet } from './../../models/i-snippet';
 
 export interface IBuildGradle {
   path: string;

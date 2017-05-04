@@ -1,4 +1,4 @@
-import { ISnippet } from "./../models/isnippet";
+import { ISnippet } from "./../models/i-snippet";
 import TextWalker from "./text-walker";
 
 export class XmlWalker<TBag extends XmlBag> extends TextWalker<TBag> {
