@@ -1,7 +1,10 @@
 // Functions to read information from the user
 
+import * as _ from "lodash";
 import * as inquirer from "inquirer";
+
 import { isQuiet } from "./io-options";
+
 export { Questions, Question, Answers, Separator } from "inquirer";
 
 export function prompt(message: string): Promise<string> {
@@ -92,16 +95,26 @@ export namespace prompt {
   };
 
   /**
-   * Automatically picks up an option if it's the only choice in the list
+   * Automatically picks up an option if either 
+   * it's the only choice in the list 
+   * or autoAnswer is provided.
+   * 
    * @param question Question object to ask
+   * @param autoAnswer If provided & exists in choices list, then used as auto answer
    */
-  export function autoAnsweringQuestion(question: inquirer.Question): Promise<inquirer.Answers> {
-  if ((question.type === "list") && question.choices && question.choices.length === 1) {
-    const pr: any = inquirer.prompt(question);
-    pr.ui.activePrompt.onSubmit((<any>question.choices)[0]);
-    return pr;
+  export function autoAnsweringQuestion(question: inquirer.Question, autoAnswer?: string): Promise<inquirer.Answers> {
+    if (question.type === "list" && question.choices) {
+      if (!autoAnswer && question.choices.length === 1)
+        autoAnswer = (<any>question.choices)[0];
+
+      if (autoAnswer && _(question.choices).includes(autoAnswer)) {
+        question.default = autoAnswer;
+        const pr: any = inquirer.prompt(question);
+        pr.ui.activePrompt.onSubmit(autoAnswer);
+        return pr;
+      }
+    }
+
+    return prompt.question(question);
   }
-    
-  return prompt.question(question);
-}
 }

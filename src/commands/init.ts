@@ -122,7 +122,7 @@ export default class IntegrateSDKCommand extends Command {
       appDirSuffix = await downloadSample(appDir, os, platform);
     }
 
-    if (!appName && !createNew) {
+    if (!createNew) {
       const appsResponse = await out.progress("Getting app list ...",
         clientRequest<models.AppResponse[]>(cb => client.apps.list(cb)));
 
@@ -130,9 +130,10 @@ export default class IntegrateSDKCommand extends Command {
         return failure(ErrorCodes.Exception, "Unknown error when loading apps");
       }
 
-      appName = await inquireAppName(appsResponse.result.filter(app =>
+      const apps = appsResponse.result.filter(app =>
         !os || app.os === os &&
-        !platform || app.platform === platform));
+        !platform || app.platform === platform);
+      appName = await inquireAppName(apps, appName);
 
       if (!appName)
         createNew = true;
@@ -324,7 +325,7 @@ async function inquireSampleApp(sampleApp: boolean, os: string, platform: string
   };
 }
 
-async function inquireAppName(apps: models.AppResponse[]): Promise<string> {
+async function inquireAppName(apps: models.AppResponse[], appName: string): Promise<string> {
   const createNewText: string = "Create new...";
 
   const question: Question = {
@@ -333,11 +334,9 @@ async function inquireAppName(apps: models.AppResponse[]): Promise<string> {
     message: "Please choose a Mobile Center app to work with",
     choices: [createNewText].concat(apps.map(app => `${app.owner.name}/${app.name}`))
   };
-  const answers = await prompt.autoAnsweringQuestion(question);
+  const answers = await prompt.autoAnsweringQuestion(question, appName);
 
-  let appName = answers.appName as string;
-
-  return appName === createNewText ? null : appName;
+  return answers.appName === createNewText ? null : answers.appName as string;
 }
 
 async function inquireNewAppAttributes(appName: string, os: string, platform: string): Promise<models.AppRequest> {
