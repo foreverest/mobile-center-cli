@@ -55,18 +55,18 @@ async function downloadSampleApp(dir: string, app: IAppBase): Promise<ILocalApp>
   };
 
   function getArchiveUrl(os: string, platform: string): { uri: string, name: string } {
-    switch (os) {
-      case "Android":
-        switch (platform) {
-          case "Java": return { uri: "https://github.com/MobileCenter/quickstart-android/archive/master.zip", name: "android-sample" };
-          case "React-Native": break;
-          case "Xamarin": return { uri: "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip", name: "xamarin-sample" };
+    switch (os.toLowerCase()) {
+      case "android":
+        switch (platform.toLowerCase()) {
+          case "java": return { uri: "https://github.com/MobileCenter/quickstart-android/archive/master.zip", name: "android-sample" };
+          case "react-native": break;
+          case "xamarin": return { uri: "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip", name: "xamarin-sample" };
         }
-      case "iOS":
-        switch (platform) {
-          case "Objective-C-Swift": return { uri: "https://github.com/MobileCenter/quickstart-ios/archive/master.zip", name: "ios-sample" };
-          case "React-Native": break;
-          case "Xamarin": return { uri: "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip", name: "xamarin-sample" };
+      case "ios":
+        switch (platform.toLowerCase()) {
+          case "objective-c-swift": return { uri: "https://github.com/MobileCenter/quickstart-ios/archive/master.zip", name: "ios-sample" };
+          case "react-native": break;
+          case "xamarin": return { uri: "https://github.com/MobileCenter/quickstart-xamarin/archive/master.zip", name: "xamarin-sample" };
         }
     }
 

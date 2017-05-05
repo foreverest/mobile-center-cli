@@ -113,10 +113,10 @@ export default class IntegrateSDKCommand extends Command {
         return success();
       }
 
-      switch (remoteApp.os) {
-        case "Android":
-          switch (remoteApp.platform) {
-            case "Java":
+      switch (remoteApp.os.toLowerCase()) {
+        case "android":
+          switch (remoteApp.platform.toLowerCase()) {
+            case "java":
               const androidJavaProjectDescription = projectDescription as IAndroidJavaProjectDescription;
               const buildGradle = await collectBuildGradleInfo(path.join(appDir, androidJavaProjectDescription.moduleName, "build.gradle"));
               const mainActivity = await collectMainActivityInfo(buildGradle, androidJavaProjectDescription.buildVariant);
@@ -129,7 +129,7 @@ export default class IntegrateSDKCommand extends Command {
           }
           break;
 
-        case "iOS":
+        case "ios":
           const iosObjectiveCSwiftProjectDescription = projectDescription as IIosObjectiveCSwiftProjectDescription;
           await out.progress("Integrating SDK into the project...",
             injectSdkIos(path.join(appDir, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),

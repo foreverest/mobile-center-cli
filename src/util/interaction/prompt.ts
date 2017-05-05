@@ -121,11 +121,15 @@ export namespace prompt {
       if (!autoAnswer && question.choices.length === 1)
         autoAnswer = (<any>question.choices)[0];
 
-      if (autoAnswer && _(question.choices).includes(autoAnswer)) {
-        question.default = autoAnswer;
+      if (autoAnswer) { 
+        
+        const answer = _(question.choices)
+          .find((x: string) => x.toLowerCase() === String(autoAnswer).toLowerCase())
+  
+        question.default = answer;
         question.pageSize = 1;
         const pr: any = inquirer.prompt(question);
-        pr.ui.activePrompt.onSubmit(autoAnswer);
+        pr.ui.activePrompt.onSubmit(answer);
         return pr;
       }
     }
