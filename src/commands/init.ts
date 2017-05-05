@@ -73,10 +73,10 @@ export default class IntegrateSDKCommand extends Command {
 
   @help("Initialize sample app")
   @longName("sample-app")
-  sampleAppOn: boolean;
+  sampleApp: boolean;
   @help("Not initialize sample app")
-  @longName("sample-app-disabled")
-  sampleAppOff: boolean;
+  @longName("no-sample-app")
+  noSampleApp: boolean;
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
     let os = this.os;
@@ -86,7 +86,7 @@ export default class IntegrateSDKCommand extends Command {
       appDir = path.join(process.cwd(), appDir);
     }
     try {
-      let localApp = await getLocalApp(appDir, os, platform, this.sampleAppOn, this.sampleAppOff);
+      let localApp = await getLocalApp(appDir, os, platform, this.sampleApp, this.noSampleApp);
       if (localApp) {
         appDir = localApp.dir;
         os = localApp.os;
