@@ -83,7 +83,7 @@ export default class IntegrateSDKCommand extends Command {
       appDir = path.join(process.cwd(), appDir);
     }
     try {
-      const localApp = await getLocalApp(appDir, os, platform, this.sampleApp);
+      let localApp = await getLocalApp(appDir, os, platform, this.sampleApp);
       if (localApp) {
         appDir = localApp.dir;
         os = localApp.os;
@@ -91,6 +91,14 @@ export default class IntegrateSDKCommand extends Command {
       }
 
       const remoteApp = await getRemoteApp(client, this.appName, os, platform, this.createNew);
+
+      if (!localApp) {
+        localApp = {
+          dir: appDir,
+          os: remoteApp.os,
+          platform: remoteApp.platform 
+        };
+      }
 
       const projectDescription = await getProjectDescription(client, localApp, remoteApp, this.branchName);
 

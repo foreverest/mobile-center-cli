@@ -103,6 +103,13 @@ export namespace prompt {
    * @param autoAnswer If provided & exists in choices list, then used as auto answer
    */
   export function autoAnsweringQuestion(question: inquirer.Question, autoAnswer?: string): Promise<inquirer.Answers> {
+    if (question.type === "input" && autoAnswer) {
+        question.default = autoAnswer;
+        const pr: any = inquirer.prompt(question);
+        pr.ui.activePrompt.onEnd({ value: autoAnswer });
+        return pr;
+    }
+
     if (question.type === "list" && question.choices) {
       if (!autoAnswer && question.choices.length === 1)
         autoAnswer = (<any>question.choices)[0];
