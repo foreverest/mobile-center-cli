@@ -91,7 +91,6 @@ export default class IntegrateSDKCommand extends Command {
       }
 
       const remoteApp = await getRemoteApp(client, this.appName, os, platform, this.createNew);
-
       if (!localApp) {
         localApp = {
           dir: appDir,

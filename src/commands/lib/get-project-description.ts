@@ -12,28 +12,21 @@ import { ProjectDescription } from "./models/project-description";
 import collectBuildGradleInfo from "./android/collect-build-gradle-info";
 import { glob } from "../../util/misc/promisfied-glob";
 
-export default async function getProjectDescription(client: MobileCenterClient, 
-    localApp: ILocalApp, 
-    remoteApp: IRemoteApp, 
-    branchName: string): Promise<ProjectDescription> {
+export default async function getProjectDescription(client: MobileCenterClient,
+  localApp: ILocalApp,
+  remoteApp: IRemoteApp,
+  branchName: string): Promise<ProjectDescription> {
 
   let inputManually = false;
   let projectDescription: ProjectDescription;
 
-  if (!branchName) {
+  const branches = await getBranchesWithBuilds(client, remoteApp);
 
-    const branches = await getBranchesWithBuilds(client, remoteApp);
-
-    if (branches.length) {
-      branchName = await inquireBranchName(branches);
-      if (!branchName)
-        inputManually = true;
-    } else {
-      inputManually = true;
-    }
-  }
-
-  if (!inputManually && branchName) {
+  branchName = await inquireBranchName(branches, branchName);
+  
+  if (!branchName)
+    inputManually = true;
+  else {
     const branchResponse = await out.progress("Getting branch configuration ...",
       clientRequest<models.BranchConfiguration>(cb =>
         client.branchConfigurations.get(branchName, remoteApp.ownerName, remoteApp.appName, cb)));
@@ -57,7 +50,7 @@ export default async function getProjectDescription(client: MobileCenterClient,
     }
   }
 
-  if (inputManually) 
+  if (inputManually)
     return inquireProjectDescription(remoteApp, localApp.dir);
 }
 
@@ -76,7 +69,7 @@ async function getBranchesWithBuilds(client: MobileCenterClient, app: IRemoteApp
     .value();
 }
 
-async function inquireBranchName(branches: models.BranchStatus[]): Promise<string> {
+async function inquireBranchName(branches: models.BranchStatus[], branchName: string): Promise<string> {
   const inputManuallyText = "Input manually..."
   const question: Question = {
     type: "list",
@@ -84,11 +77,9 @@ async function inquireBranchName(branches: models.BranchStatus[]): Promise<strin
     message: "Where do you want to get project settings from?",
     choices: [inputManuallyText].concat(branches.map(branch => branch.lastBuild.sourceBranch))
   };
-  const answers = await prompt.autoAnsweringQuestion(question);
+  const answers = await prompt.autoAnsweringQuestion(question, branchName);
 
-  let branchName = answers.branchName as string;
-
-  return branchName === inputManuallyText ? null : branchName;
+  return answers.branchName === inputManuallyText ? null : answers.branchName as string;
 }
 
 async function inquireProjectDescription(app: IRemoteApp, dir: string): Promise<ProjectDescription> {

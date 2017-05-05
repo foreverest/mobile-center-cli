@@ -16,7 +16,7 @@ import { glob } from "../../util/misc/promisfied-glob";
 
 export default async function getLocalApp(dir: string, osArg: string, platformArg: string, sampleAppArg: boolean): Promise<ILocalApp> {
   const detectedApp = await detectLocalApp(dir);
-  if (detectedApp && await prompt.confirm(`An existing ${detectedApp.os}/${detectedApp.platform} is detected. Do you want to use it?`)) 
+  if (detectedApp && await prompt.confirm(`An existing ${detectedApp.os}/${detectedApp.platform} app is detected. Do you want to use it?`)) 
     return detectedApp;
     
   const sampleApp = await inquireSampleApp(sampleAppArg, osArg, platformArg);
