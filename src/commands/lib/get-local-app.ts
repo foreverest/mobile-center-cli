@@ -6,35 +6,46 @@ import * as mkdirp from "mkdirp";
 import * as path from "path";
 import * as request from "request";
 
+import { Answers, Question, Questions, Separator } from "../../util/interaction/prompt";
 import { ErrorCodes, failure } from "../../util/commandline/index";
-import { Question, Questions, Separator } from "../../util/interaction/prompt";
 import { out, prompt } from "../../util/interaction";
 
 import { ClientResponse } from "../../util/apis/index";
+import { IAppBase } from './models/i-app-base';
 import { ILocalApp } from "./models/i-local-app";
 import { glob } from "../../util/misc/promisfied-glob";
 
-export default async function getLocalApp(dir: string, osArg: string, platformArg: string, sampleAppArg: boolean): Promise<ILocalApp> {
-  const detectedApp = await detectLocalApp(dir);
-  if (detectedApp && await prompt.confirm(`An existing ${detectedApp.os}/${detectedApp.platform} app is detected. Do you want to use it?`)) 
-    return detectedApp;
-    
-  const sampleApp = await inquireSampleApp(sampleAppArg, osArg, platformArg);
+export default async function getLocalApp(dir: string,
+  osArg: string,
+  platformArg: string,
+  sampleAppOnArg: boolean,
+  sampleAppOffArg: boolean): Promise<ILocalApp> {
 
-  if (sampleApp.confirm) 
-    return await downloadSampleApp({ 
-      dir, 
-      os: sampleApp.os, 
-      platform: sampleApp.platform 
-    });
+  const detectedApp = await detectLocalApp(dir);
+  if (detectedApp && await prompt.confirm(`An existing ${detectedApp.os}/${detectedApp.platform} app is detected. Do you want to use it?`))
+    return detectedApp;
+
+  const sampleApp = sampleAppOnArg !== sampleAppOffArg ? sampleAppOnArg : null;
+  const question: Question = {
+    type: "confirm",
+    name: "confirm",
+    message: "Do you want to download sample app?",
+    default: false
+  };
+  const answers = await prompt.autoAnsweringQuestion(question, sampleApp);
+
+  if (answers.confirm) {
+    const app = await inquireOsPlatform(osArg, platformArg);
+    return downloadSampleApp(dir, app);
+  }
 
   return null;
 }
 
-async function downloadSampleApp(app: ILocalApp): Promise<ILocalApp> {
+async function downloadSampleApp(dir: string, app: IAppBase): Promise<ILocalApp> {
 
   const { uri, name } = getArchiveUrl(app.os, app.platform);
-  const appDir = path.join(app.dir, name);
+  const appDir = path.join(dir, name);
   const response = await out.progress(`Downloading the file... ${uri}`, downloadFile(uri));
   await out.progress("Unzipping the archive...", unzip(appDir, response.result));
   return {
@@ -99,63 +110,49 @@ async function downloadSampleApp(app: ILocalApp): Promise<ILocalApp> {
 async function detectLocalApp(dir: string): Promise<ILocalApp> {
   const xcodeDirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
   if (xcodeDirs.length)
-    return { 
-      dir, 
-      os: 'iOS', 
-      platform: "Objective-C-Swift" 
+    return {
+      dir,
+      os: 'iOS',
+      platform: "Objective-C-Swift"
     };
   const gradleFiles = await glob(path.join(dir, "build.gradle"));
   if (gradleFiles.length)
-    return { 
-      dir, 
-      os: 'Android', 
-      platform: "Java" 
+    return {
+      dir,
+      os: 'Android',
+      platform: "Java"
     };
   return null;
 }
 
-async function inquireSampleApp(sampleApp: boolean, os: string, platform: string): Promise<{ confirm: boolean, os: string, platform: string }> {
-  const questions: Questions = [];
-  if (!sampleApp) {
-    questions.push({
-      type: "confirm",
-      name: "confirm",
-      message: "Do you want to download sample app?",
-      default: false
-    });
-  }
+async function inquireOsPlatform(osDefault: string, platformDefault: string): Promise<IAppBase> {
+  let question: Question;
+  let answers: Answers;
 
-  if (!os) {
-    questions.push({
-      type: "list",
-      name: "os",
-      message: "Please specify sample app's OS",
-      choices: ["Android", "iOS"],
-      when: (answers: any) => answers.confirm || sampleApp
-    });
-  }
-
-  if (!platform) {
-    questions.push({
-      type: "list",
-      name: "platform",
-      message: "Please specify sample app's platform",
-      choices: answers => {
-        switch (answers.os) {
-          case "iOS": return ["Objective-C-Swift", "React-Native", "Xamarin"];
-          case "Android": return ["Java", "React-Native", "Xamarin"];
-          default: return [];
-        }
-      },
-      when: (answers: any) => answers.confirm || sampleApp
-    });
-  }
-
-  const answers = await prompt.question(questions);
-
-  return {
-    confirm: sampleApp || answers.confirm as boolean,
-    os: os || answers.os as string,
-    platform: platform || answers.platform as string,
+  question = {
+    type: "list",
+    name: "os",
+    message: "Please specify OS",
+    choices: ["Android", "iOS"]
   };
+  answers = await prompt.autoAnsweringQuestion(question, osDefault);
+  const os = answers.os as string;
+
+  const platforms: string[] = [];
+  if (os === "iOS") {
+    platforms.push("Objective-C-Swift", "React-Native", "Xamarin");
+  }
+  if (os === "Android") {
+    platforms.push("Java", "React-Native", "Xamarin");
+  }
+  question = {
+    type: "list",
+    name: "platform",
+    message: "Please specify platform",
+    choices: platforms
+  };
+  answers = await prompt.autoAnsweringQuestion(question, platformDefault);
+  const platform = answers.platform as string;
+
+  return { os, platform };
 }
