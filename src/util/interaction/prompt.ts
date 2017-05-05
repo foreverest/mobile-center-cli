@@ -25,9 +25,9 @@ export namespace prompt {
         default: !!defaultResponse
       }
     ])
-    .then(answers => {
-      return answers["confirm"];
-    });
+      .then(answers => {
+        return answers["confirm"];
+      });
   }
 
   export function confirmWithTimeout(message: string, timeoutMS: number, defaultResponse?: boolean): Promise<boolean> {
@@ -65,7 +65,7 @@ export namespace prompt {
         name: "result",
         message: message
       }])
-    .then(answers => answers["result"]);
+      .then(answers => answers["result"]);
   };
 
   export function question(questions: inquirer.Questions): Promise<inquirer.Answers> {
@@ -104,33 +104,34 @@ export namespace prompt {
    */
   export function autoAnsweringQuestion(question: inquirer.Question, autoAnswer?: string | boolean): Promise<inquirer.Answers> {
     if (question.type === "confirm" && _.isBoolean(autoAnswer)) {
-        question.default = autoAnswer;
-        const pr: any = inquirer.prompt(question);
-        pr.ui.activePrompt.onEnd(autoAnswer ? "y" : "n");
-        return pr;
+      question.default = autoAnswer;
+      const pr: any = inquirer.prompt(question);
+      pr.ui.activePrompt.onEnd(autoAnswer ? "y" : "n");
+      return pr;
     }
 
     if (question.type === "input" && autoAnswer) {
-        question.default = autoAnswer;
-        const pr: any = inquirer.prompt(question);
-        pr.ui.activePrompt.onEnd({ value: autoAnswer });
-        return pr;
+      question.default = autoAnswer;
+      const pr: any = inquirer.prompt(question);
+      pr.ui.activePrompt.onEnd({ value: autoAnswer });
+      return pr;
     }
 
     if (question.type === "list" && question.choices) {
       if (!autoAnswer && question.choices.length === 1)
         autoAnswer = (<any>question.choices)[0];
 
-      if (autoAnswer) { 
-        
+      if (autoAnswer) {
         const answer = _(question.choices)
           .find((x: string) => x.toLowerCase() === String(autoAnswer).toLowerCase())
-  
-        question.default = answer;
-        question.pageSize = 1;
-        const pr: any = inquirer.prompt(question);
-        pr.ui.activePrompt.onSubmit(answer);
-        return pr;
+
+        if (answer) {
+          question.default = answer;
+          question.pageSize = 1;
+          const pr: any = inquirer.prompt(question);
+          pr.ui.activePrompt.onSubmit(answer);
+          return pr;
+        }
       }
     }
 

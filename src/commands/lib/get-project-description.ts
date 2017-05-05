@@ -15,7 +15,9 @@ import { glob } from "../../util/misc/promisfied-glob";
 export default async function getProjectDescription(client: MobileCenterClient,
   localApp: ILocalApp,
   remoteApp: IRemoteApp,
-  branchName: string): Promise<ProjectDescription> {
+  branchName: string,
+  androidModule: string,
+  androidBuildVariant: string): Promise<ProjectDescription> {
 
   let inputManually = false;
   let projectDescription: ProjectDescription;
@@ -51,7 +53,7 @@ export default async function getProjectDescription(client: MobileCenterClient,
   }
 
   if (inputManually)
-    return inquireProjectDescription(remoteApp, localApp.dir);
+    return inquireProjectDescription(remoteApp, localApp.dir, androidModule, androidBuildVariant);
 }
 
 async function getBranchesWithBuilds(client: MobileCenterClient, app: IRemoteApp): Promise<models.BranchStatus[]> {
@@ -82,15 +84,18 @@ async function inquireBranchName(branches: models.BranchStatus[], branchName: st
   return answers.branchName === inputManuallyText ? null : answers.branchName as string;
 }
 
-async function inquireProjectDescription(app: IRemoteApp, dir: string): Promise<ProjectDescription> {
-  if (app.os === "Android" && app.platform === "Java") {
+async function inquireProjectDescription(app: IRemoteApp, dir: string,
+  androidModule: string,
+  androidBuildVariant: string): Promise<ProjectDescription> {
+
+  if (app.os.toLowerCase() === "android" && app.platform.toLowerCase() === "java") {
     let question: Question = {
       type: "list",
       name: "moduleName",
       message: "Gradle module name",
       choices: await findGradleModules(dir)
     };
-    const answers = await prompt.autoAnsweringQuestion(question);
+    const answers = await prompt.autoAnsweringQuestion(question, androidModule);
     const moduleName = answers.moduleName as string;
     if (moduleName) {
       const filePath = path.join(dir, moduleName, "build.gradle");
@@ -100,9 +105,9 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string): Promise<
           type: "list",
           name: "buildVariant",
           message: "Build variant",
-          choices: buildGradle.buildVariants
+          choices: buildGradle.buildVariants.map(x => x.name)
         };
-        const answers = await prompt.autoAnsweringQuestion(questions);
+        const answers = await prompt.autoAnsweringQuestion(questions, androidBuildVariant);
         return {
           moduleName,
           buildVariant: answers.buildVariant as string
@@ -112,7 +117,7 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string): Promise<
     }
   }
 
-  if (app.os === "iOS" && app.platform === "Objective-C-Swift") {
+  if (app.os.toLowerCase() === "ios" && app.platform.toLowerCase() === "objective-c-swift") {
     let questions: Questions = [{
       type: "list",
       name: "projectOrWorkspacePath",

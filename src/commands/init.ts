@@ -74,9 +74,20 @@ export default class IntegrateSDKCommand extends Command {
   @help("Initialize sample app")
   @longName("sample-app")
   sampleApp: boolean;
+
   @help("Not initialize sample app")
   @longName("no-sample-app")
   noSampleApp: boolean;
+
+  @help("Gradle module name for Android app")
+  @longName("android-module")
+  @hasArg
+  androidModule: string;
+
+  @help("Build variant for Android app")
+  @longName("android-build-variant")
+  @hasArg
+  androidBuildVariant: string;
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
     let os = this.os;
@@ -102,7 +113,10 @@ export default class IntegrateSDKCommand extends Command {
         };
       }
 
-      const projectDescription = await getProjectDescription(client, localApp, remoteApp, this.branchName);
+      const projectDescription = await getProjectDescription(client, localApp, remoteApp, 
+        this.branchName, 
+        this.androidModule, 
+        this.androidBuildVariant);
 
       const sdkModules = await getSdkModules(this.analyticsModule, this.crashesModule, this.distributeModule);
 
