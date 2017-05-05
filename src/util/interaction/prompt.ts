@@ -123,6 +123,7 @@ export namespace prompt {
 
       if (autoAnswer && _(question.choices).includes(autoAnswer)) {
         question.default = autoAnswer;
+        question.pageSize = 1;
         const pr: any = inquirer.prompt(question);
         pr.ui.activePrompt.onSubmit(autoAnswer);
         return pr;

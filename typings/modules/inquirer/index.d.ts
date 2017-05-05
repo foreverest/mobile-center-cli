@@ -178,6 +178,7 @@ export interface Question {
    */
   when?: boolean | ((answers: Answers) => boolean);
   paginated?: boolean;
+  pageSize?: number;
 }
 
 /**
