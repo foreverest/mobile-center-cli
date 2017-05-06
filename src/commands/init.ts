@@ -61,15 +61,15 @@ export default class IntegrateSDKCommand extends Command {
 
   @help("Enable Analytics module")
   @longName("analytics")
-  analyticsModule: boolean;
+  analytics: boolean;
 
   @help("Enable Crashes module")
   @longName("crashes")
-  crashesModule: boolean;
+  crashes: boolean;
 
   @help("Enable Distribute module")
   @longName("distribute")
-  distributeModule: boolean;
+  distribute: boolean;
 
   @help("Initialize sample app")
   @longName("sample-app")
@@ -130,7 +130,7 @@ export default class IntegrateSDKCommand extends Command {
         this.iosProjectPath,
         this.iosPodfilePath);
 
-      const sdkModules = await getSdkModules(this.analyticsModule, this.crashesModule, this.distributeModule);
+      const sdkModules = await getSdkModules(this.analytics, this.crashes, this.distribute);
 
       reportProject(remoteApp, projectDescription);
 

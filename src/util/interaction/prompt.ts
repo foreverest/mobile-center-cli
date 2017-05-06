@@ -102,7 +102,16 @@ export namespace prompt {
    * @param question Question object to ask
    * @param autoAnswer If provided & exists in choices list, then used as auto answer
    */
-  export function autoAnsweringQuestion(question: inquirer.Question, autoAnswer?: string | boolean): Promise<inquirer.Answers> {
+  export function autoAnsweringQuestion(question: inquirer.Question, autoAnswer?: string | string[] | boolean): Promise<inquirer.Answers> {
+    if (question.type === "checkbox" && autoAnswer && _.isArray(autoAnswer)) {
+      question.default = autoAnswer;
+      question.pageSize = 1;
+      const pr: any = inquirer.prompt(question);
+      pr.ui.activePrompt.getCurrentValue();
+      pr.ui.activePrompt.onEnd({ value: autoAnswer });
+      return pr;
+    }
+
     if (question.type === "confirm" && _.isBoolean(autoAnswer)) {
       question.default = autoAnswer;
       const pr: any = inquirer.prompt(question);

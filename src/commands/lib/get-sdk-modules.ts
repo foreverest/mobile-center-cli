@@ -5,47 +5,47 @@ import { Question } from "../../util/interaction/prompt";
 import { prompt } from "../../util/interaction";
 
 export default async function getSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
-  let sdkModules: MobileCenterSdkModule = MobileCenterSdkModule.None;
-  if (this.analyticsModule)
-    sdkModules |= MobileCenterSdkModule.Analytics;
-  if (this.crashesModule)
-    sdkModules |= MobileCenterSdkModule.Crashes;
-  if (this.distributeModule)
-    sdkModules |= MobileCenterSdkModule.Distribute;
-
-  return sdkModules || inquireSdkModules();
+  return inquireSdkModules(analytics, crashes, distribute);
 }
 
-async function inquireSdkModules(): Promise<MobileCenterSdkModule> {
+async function inquireSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
   let questions: Question = {
     type: "checkbox",
     name: "modules",
     message: "Which modules do you want to insert?",
     choices: [{
       name: "Analytics",
-      value: "analitics",
-      checked: true
+      value: "analytics"
     }, {
       name: "Crashes",
-      value: "crashes",
-      checked: true
+      value: "crashes"
     }, {
       name: "Distribute",
-      value: "distribute",
-      checked: true
+      value: "distribute"
     }],
     validate: (x: any) => {
       return x && x.length ? true : "Please choose at least one module";
     }
   };
 
+  let modules: string[] = [];
+  if (analytics)
+    modules.push("analytics");
+  if (crashes)
+    modules.push("crashes");
+  if (distribute)
+    modules.push("distribute");
+  if (!modules.length)
+     modules = null;
+
+  const answers = await prompt.autoAnsweringQuestion(questions, modules);
+  modules = answers.modules as string[];
   let sdkModules = MobileCenterSdkModule.None;
-  const answers = await prompt.question(questions);
-  if (_.includes(answers.modules as string[], "analitics"))
+  if (_.includes(modules, "analytics"))
     sdkModules |= MobileCenterSdkModule.Analytics;
-  if (_.includes(answers.modules as string[], "crashes"))
+  if (_.includes(modules, "crashes"))
     sdkModules |= MobileCenterSdkModule.Crashes;
-  if (_.includes(answers.modules as string[], "distribute"))
+  if (_.includes(modules, "distribute"))
     sdkModules |= MobileCenterSdkModule.Distribute;
 
   return sdkModules;
