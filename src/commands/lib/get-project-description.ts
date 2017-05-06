@@ -17,7 +17,9 @@ export default async function getProjectDescription(client: MobileCenterClient,
   remoteApp: IRemoteApp,
   branchName: string,
   androidModule: string,
-  androidBuildVariant: string): Promise<ProjectDescription> {
+  androidBuildVariant: string,
+  iosProjectPath: string,
+  iosPodfilePath: string): Promise<ProjectDescription> {
 
   let inputManually = false;
   let projectDescription: ProjectDescription;
@@ -53,7 +55,7 @@ export default async function getProjectDescription(client: MobileCenterClient,
   }
 
   if (inputManually)
-    return inquireProjectDescription(remoteApp, localApp.dir, androidModule, androidBuildVariant);
+    return inquireProjectDescription(remoteApp, localApp.dir, androidModule, androidBuildVariant, iosProjectPath, iosPodfilePath);
 }
 
 async function getBranchesWithBuilds(client: MobileCenterClient, app: IRemoteApp): Promise<models.BranchStatus[]> {
@@ -86,7 +88,9 @@ async function inquireBranchName(branches: models.BranchStatus[], branchName: st
 
 async function inquireProjectDescription(app: IRemoteApp, dir: string,
   androidModule: string,
-  androidBuildVariant: string): Promise<ProjectDescription> {
+  androidBuildVariant: string,
+  iosProjectPath: string,
+  iosPodfilePath: string): Promise<ProjectDescription> {
 
   if (app.os.toLowerCase() === "android" && app.platform.toLowerCase() === "java") {
     let question: Question = {
@@ -101,13 +105,13 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
       const filePath = path.join(dir, moduleName, "build.gradle");
       const buildGradle = await collectBuildGradleInfo(filePath);
       if (buildGradle.buildVariants && buildGradle.buildVariants.length) {
-        let questions: Question = {
+        let question: Question = {
           type: "list",
           name: "buildVariant",
           message: "Build variant",
           choices: buildGradle.buildVariants.map(x => x.name)
         };
-        const answers = await prompt.autoAnsweringQuestion(questions, androidBuildVariant);
+        const answers = await prompt.autoAnsweringQuestion(question, androidBuildVariant);
         return {
           moduleName,
           buildVariant: answers.buildVariant as string
@@ -118,16 +122,26 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
   }
 
   if (app.os.toLowerCase() === "ios" && app.platform.toLowerCase() === "objective-c-swift") {
-    let questions: Questions = [{
+    let question: Question = {
       type: "list",
       name: "projectOrWorkspacePath",
       message: "Path to project or workspace",
       choices: await findProjectsAndWorkspaces(dir)
-    }];
-    const answers = await prompt.question(questions);
+    };
+    let answers = await prompt.autoAnsweringQuestion(question, iosProjectPath);
+    const projectOrWorkspacePathAnswer = answers.projectOrWorkspacePath as string;
+
+    question = {
+      type: "list",
+      name: "podfilePath",
+      message: "Path to podfile",
+      choices: await findPodfiles(dir)
+    };
+    answers = await prompt.autoAnsweringQuestion(question, iosPodfilePath);
+    const podfilePathAnswer = answers.podfilePath as string;
     return {
-      projectOrWorkspacePath: answers.projectOrWorkspacePath as string,
-      podfilePath: "./podfile" //TODO: ???
+      projectOrWorkspacePath: projectOrWorkspacePathAnswer,
+      podfilePath: podfilePathAnswer
     };
   }
 
@@ -151,5 +165,10 @@ async function findGradleModules(dir: string): Promise<string[]> {
 async function findProjectsAndWorkspaces(dir: string): Promise<string[]> {
   const dirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
   return dirs.map(d => path.relative(dir, d));
+}
+
+async function findPodfiles(dir: string): Promise<string[]> {
+  const files = await glob(path.join(dir, "**/podfile")); // TODO: glob only files (not directories)
+  return files.map(file => path.relative(dir, file));
 }
 

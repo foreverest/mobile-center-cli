@@ -89,6 +89,16 @@ export default class IntegrateSDKCommand extends Command {
   @hasArg
   androidBuildVariant: string;
 
+  @help("Project or workspace path for iOS app")
+  @longName("ios-project-path")
+  @hasArg
+  iosProjectPath: string;
+
+  @help("Podfile path for iOS app")
+  @longName("ios-podfile-path")
+  @hasArg
+  iosPodfilePath: string
+
   async run(client: MobileCenterClient): Promise<CommandResult> {
     let os = this.os;
     let platform = this.platform;
@@ -116,7 +126,9 @@ export default class IntegrateSDKCommand extends Command {
       const projectDescription = await getProjectDescription(client, localApp, remoteApp, 
         this.branchName, 
         this.androidModule, 
-        this.androidBuildVariant);
+        this.androidBuildVariant,
+        this.iosProjectPath,
+        this.iosPodfilePath);
 
       const sdkModules = await getSdkModules(this.analyticsModule, this.crashesModule, this.distributeModule);
 
