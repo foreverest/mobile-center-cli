@@ -12,9 +12,10 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
     this.context.podfilePath = this.context.podfilePath || Path.join(this.context.projectRootDirectory, "Podfile");
 
     let content = await this.getContent(this.context.podfilePath);
-    content = this.addOrRemoveService(content, "pod 'MobileCenter/MobileCenterAnalytics'", this.context.analyticsEnabled);
-    content = this.addOrRemoveService(content, "pod 'MobileCenter/MobileCenterCrashes'", this.context.crashesEnabled);
-    content = this.addOrRemoveService(content, "pod 'MobileCenter/MobileCenterDistribute'", this.context.distributeEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter`, false);
+    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterAnalytics`, this.context.analyticsEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterCrashes`, this.context.crashesEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterDistribute`, this.context.distributeEnabled);
     this.context.enqueueAction(() => FS.writeTextFile(this.context.podfilePath, content, "utf8"));
   }
 
@@ -27,9 +28,10 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
   }
 
   private addOrRemoveService(content: string, service: string, add: boolean) {
-    const serviceVersion = this.context.sdkVersion ? `${service}, '${this.context.sdkVersion}'` : service;
+    const quote = `['\u2018\u2019"]`;
+    const serviceVersion = `pod '${service}'` + (this.context.sdkVersion ? `, '${this.context.sdkVersion}'` : "");
     let match: RegExpExecArray;
-    const targetRegExp = new RegExp(`(target\\s+?:?['"]?${Helpers.escapeRegExp(this.context.projectName)}['"]?\\s+?do[\\s\\S]*?\r?\n)end`, "i");
+    const targetRegExp = new RegExp(`(target\\s+?:?${quote}?${Helpers.escapeRegExp(this.context.projectName)}${quote}?\\s+?do[\\s\\S]*?\r?\n)end`, "i");
     match = targetRegExp.exec(content);
     let startIndex: number;
     let endIndex: number;
@@ -44,7 +46,7 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
     }
 
     let serviceIndex = -1;
-    const serviceRegex = new RegExp(` *?${service}.*\r?\n?`);
+    const serviceRegex = new RegExp(` *?pod +${quote}${service}${quote}.*\r?\n?`);
     match = serviceRegex.exec(content.substr(startIndex, endIndex - startIndex));
     if (match) {
       serviceIndex = startIndex + match.index;
