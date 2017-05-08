@@ -138,7 +138,8 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
     }
 
     const start = `[MSMobileCenter start:@"${this.context.appSecret}" withServices:@[${services.join(", ")}]];`
-    appDelegateContent = Helpers.splice(appDelegateContent, bag.applicationFuncStartIndex, 0, `\n    ${start}`);
+    const startIndex = bag.msMobileCenterStartCallStartIndex >= 0 ? bag.msMobileCenterStartCallStartIndex : bag.applicationFuncStartIndex;
+    appDelegateContent = Helpers.splice(appDelegateContent, startIndex, 0, `\n    ${start}`);
     return appDelegateContent;
   }
 }

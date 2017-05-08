@@ -79,7 +79,7 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
         && bag.msMobileCenterStartCallStartIndex < 0
         && textWalker.forepart.startsWith("MSMobileCenter.start"),
       bag => {
-        let match = /^MSMobileCenter.start\s*?\(".+?",\s*?withServices: .+?\)/.exec(textWalker.forepart);
+        let match = /^MSMobileCenter.start\s*?\(".+?",\s*?withServices:\s*?\[[\s\S]+?\]\s*?\)/.exec(textWalker.forepart);
         if (match) {
           bag.msMobileCenterStartCallStartIndex = textWalker.position;
           bag.msMobileCenterStartCallLength = match[0].length;
@@ -140,7 +140,8 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
     }
 
     const start = `MSMobileCenter.start("${this.context.appSecret}", withServices: [${services.join(", ")}])`;
-    appDelegateContent = Helpers.splice(appDelegateContent, bag.applicationFuncStartIndex, 0, `\n        ${start}`);
+    const startIndex = bag.msMobileCenterStartCallStartIndex >= 0 ? bag.msMobileCenterStartCallStartIndex : bag.applicationFuncStartIndex;
+    appDelegateContent = Helpers.splice(appDelegateContent, startIndex, 0, `\n        ${start}`);
     return appDelegateContent;
   }
 }
