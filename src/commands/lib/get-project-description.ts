@@ -163,7 +163,15 @@ async function findGradleModules(dir: string): Promise<string[]> {
 }
 
 async function findProjectsAndWorkspaces(dir: string): Promise<string[]> {
-  const dirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
+  let dirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
+
+  const xcworkspaceDirs = dirs
+    .filter(x => path.extname(x).toLowerCase() === ".xcworkspace")
+    .map(x => path.join(path.dirname(x), path.basename(x, path.extname(x))));
+
+  dirs = dirs.filter(x => path.extname(x).toLowerCase() === ".xcworkspace"
+    || !~xcworkspaceDirs.indexOf(path.join(path.dirname(x), path.basename(x, path.extname(x)))));
+
   return dirs.map(d => path.relative(dir, d));
 }
 
