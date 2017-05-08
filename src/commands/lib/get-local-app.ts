@@ -42,10 +42,9 @@ export default async function getLocalApp(dir: string,
   return null;
 }
 
-async function downloadSampleApp(dir: string, app: IAppBase): Promise<ILocalApp> {
+async function downloadSampleApp(appDir: string, app: IAppBase): Promise<ILocalApp> {
 
   const { uri, name } = getArchiveUrl(app.os, app.platform);
-  const appDir = path.join(dir, name);
   const response = await out.progress(`Downloading the file... ${uri}`, downloadFile(uri));
   await out.progress("Unzipping the archive...", unzip(appDir, response.result));
   return {
