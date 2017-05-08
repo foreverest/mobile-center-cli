@@ -9,6 +9,7 @@ import * as request from "request";
 import { Answers, Question, Questions, Separator } from "../../util/interaction/prompt";
 import { ErrorCodes, failure } from "../../util/commandline/index";
 import { out, prompt } from "../../util/interaction";
+import { downloadFile } from "../../util/misc/promisfied-https";
 
 import { ClientResponse } from "../../util/apis/index";
 import { IAppBase } from './models/i-app-base';
@@ -70,18 +71,6 @@ async function downloadSampleApp(appDir: string, app: IAppBase): Promise<ILocalA
     }
 
     throw failure(ErrorCodes.InvalidParameter, "Unsupported OS or platform");
-  }
-
-  async function downloadFile(uri: string): Promise<ClientResponse<Buffer>> {
-    return new Promise<ClientResponse<Buffer>>((resolve, reject) => {
-      request.get(uri, { encoding: null }, (error, response, body: Buffer) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve({ result: body, response });
-        }
-      });
-    });
   }
 
   async function unzip(directory: string, buffer: Buffer) {

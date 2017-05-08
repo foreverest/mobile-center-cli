@@ -1,6 +1,7 @@
 // sdk integrate command
 
 import * as path from "path";
+import * as _ from "lodash";
 
 import { Command, CommandArgs, CommandResult, ErrorCodes, defaultValue, failure, getCurrentApp, help, required, success } from "../util/commandline";
 import { IAndroidJavaProjectDescription, IIosObjectiveCSwiftProjectDescription, ProjectDescription } from "./lib/models/project-description";
@@ -18,6 +19,7 @@ import getRemoteApp from "./lib/get-remote-app";
 import getSdkModules from "./lib/get-sdk-modules";
 import { injectSdkIos } from "./lib/ios/inject-sdk-ios";
 import { reportProject } from "./lib/format-project";
+import { getSdkVersions } from "./lib/get-sdk-versions";
 
 @help("Integrate Mobile Center SDK into the project")
 export default class IntegrateSDKCommand extends Command {
@@ -139,6 +141,9 @@ export default class IntegrateSDKCommand extends Command {
         return success();
       }
 
+      const sdkVersions = await getSdkVersions(remoteApp.platform.toLowerCase());
+      const latestSdkVersion = _.last(sdkVersions);
+
       switch (remoteApp.os.toLowerCase()) {
         case "android":
           switch (remoteApp.platform.toLowerCase()) {
@@ -148,9 +153,11 @@ export default class IntegrateSDKCommand extends Command {
               const mainActivity = await collectMainActivityInfo(buildGradle, androidJavaProjectDescription.buildVariant);
 
               await out.progress("Integrating SDK into the project...",
-                injectAndroidJava(buildGradle, mainActivity, "0.6.1", // TODO: Retrieve SDK version from somewhere
-                  remoteApp.appSecret, sdkModules));
-
+                injectAndroidJava(buildGradle,
+                  mainActivity,
+                  latestSdkVersion,
+                  remoteApp.appSecret,
+                  sdkModules));
               break;
           }
           break;
@@ -161,8 +168,8 @@ export default class IntegrateSDKCommand extends Command {
             injectSdkIos(path.join(appDir, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
               path.join(appDir, iosObjectiveCSwiftProjectDescription.podfilePath),
               remoteApp.appSecret,
-              sdkModules/*,
-              "sdk version"*/));
+              sdkModules,
+              latestSdkVersion));
           break;
 
         default:
