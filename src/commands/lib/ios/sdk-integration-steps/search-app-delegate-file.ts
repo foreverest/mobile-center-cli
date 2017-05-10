@@ -10,10 +10,9 @@ import { InsertSdkInAppDelegateSwift } from "./insert-sdk-in-app-delegate-swift"
 
 export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
   protected async step() {
-    let path = await this.searchSwiftAppDelegate();
-    if (!path) {
-      path = await this.searchObjectiveCAppDelegate();
-    }
+    const swiftAppDelegate = await this.searchSwiftAppDelegate();
+    const objectiveCAppDelegate = await this.searchObjectiveCAppDelegate();
+    const path = [swiftAppDelegate, objectiveCAppDelegate].filter(x => !!x).sort((a, b) => a.split("/").length - b.split("/").length)[0];
 
     if (!path) {
       throw new SdkIntegrationError("There is no AppDelegate file");
@@ -36,7 +35,7 @@ export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
     }
   }
 
-  private searchSwiftAppDelegate() {
+  private searchSwiftAppDelegate(): Promise<string> {
     return this.searchInFiles("swift", path => this.isSwiftAppDelegateFile(path));
   }
 
@@ -45,7 +44,7 @@ export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
     return /@UIApplicationMain[\s\w@]+?class\s+?[\w]+\s*?:/.test(content);
   }
 
-  private async searchObjectiveCAppDelegate() {
+  private async searchObjectiveCAppDelegate(): Promise<string> {
     let implementationName: string;
     const path = await this.searchInFiles("h", async path => {
       const content = await FS.readTextFile(path, "utf8");
