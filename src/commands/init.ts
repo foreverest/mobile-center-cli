@@ -166,7 +166,7 @@ export default class IntegrateSDKCommand extends Command {
           const iosObjectiveCSwiftProjectDescription = projectDescription as IIosObjectiveCSwiftProjectDescription;
           await out.progress("Integrating SDK into the project...",
             injectSdkIos(path.join(appDir, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
-              path.join(appDir, iosObjectiveCSwiftProjectDescription.podfilePath),
+              iosObjectiveCSwiftProjectDescription.podfilePath && path.join(appDir, iosObjectiveCSwiftProjectDescription.podfilePath),
               remoteApp.appSecret,
               sdkModules,
               latestSdkVersion));

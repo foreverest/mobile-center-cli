@@ -131,17 +131,9 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
     let answers = await prompt.autoAnsweringQuestion(question, iosProjectPath);
     const projectOrWorkspacePathAnswer = answers.projectOrWorkspacePath as string;
 
-    question = {
-      type: "list",
-      name: "podfilePath",
-      message: "Path to podfile",
-      choices: await findPodfiles(dir)
-    };
-    answers = await prompt.autoAnsweringQuestion(question, iosPodfilePath);
-    const podfilePathAnswer = answers.podfilePath as string;
     return {
       projectOrWorkspacePath: projectOrWorkspacePathAnswer,
-      podfilePath: podfilePathAnswer
+      podfilePath: iosPodfilePath
     };
   }
 
@@ -174,9 +166,3 @@ async function findProjectsAndWorkspaces(dir: string): Promise<string[]> {
 
   return dirs.map(d => path.relative(dir, d));
 }
-
-async function findPodfiles(dir: string): Promise<string[]> {
-  const files = await glob(path.join(dir, "**/podfile")); // TODO: glob only files (not directories)
-  return files.map(file => path.relative(dir, file));
-}
-
