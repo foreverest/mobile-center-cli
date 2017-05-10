@@ -25,9 +25,9 @@ export default async function getProjectDescription(client: MobileCenterClient,
   let projectDescription: ProjectDescription;
 
   const branches = await getBranchesWithBuilds(client, remoteApp);
+  const branchConfigurations = await getBranchConfigurations(client, remoteApp, branches);
+  branchName = await inquireBranchName(branches, branchConfigurations, branchName);
 
-  branchName = await inquireBranchName(branches, branchName);
-  
   if (!branchName)
     inputManually = true;
   else {
@@ -73,17 +73,51 @@ async function getBranchesWithBuilds(client: MobileCenterClient, app: IRemoteApp
     .value();
 }
 
-async function inquireBranchName(branches: models.BranchStatus[], branchName: string): Promise<string> {
-  const inputManuallyText = "Input manually..."
+async function getBranchConfigurations(client: MobileCenterClient, app: IRemoteApp, branches: models.BranchStatus[]): Promise<models.BranchConfiguration[]> {
+  let branchConfigurationsRequestResponse: ClientResponse<models.BranchConfiguration>[];
+  try {
+    branchConfigurationsRequestResponse = await out.progress(`Getting branch configurations of app ${app.appName}...`,
+      Promise.all(branches.map(branch =>
+        clientRequest<models.BranchConfiguration>((cb) => client.branchConfigurations.get(branch.lastBuild.sourceBranch, app.ownerName, app.appName, cb)))));
+  } catch (error) {
+    return [];
+  }
+
+  return branchConfigurationsRequestResponse.map(x => x.result);
+}
+
+async function inquireBranchName(branches: models.BranchStatus[], branchConfigurations: models.BranchConfiguration[], branchName: string): Promise<string> {
+  const choices = [
+    "Input manually..."
+  ].concat(branches.map((x, i) => getChoiceName(x, i)));
+
   const question: Question = {
     type: "list",
-    name: "branchName",
+    name: "answer",
     message: "Where do you want to get project settings from?",
-    choices: [inputManuallyText].concat(branches.map(branch => branch.lastBuild.sourceBranch))
+    choices: choices
   };
   const answers = await prompt.autoAnsweringQuestion(question, branchName);
+  const answerIndex = choices.indexOf((answers as any).answer);
 
-  return answers.branchName === inputManuallyText ? null : answers.branchName as string;
+  return answerIndex === 0 ? null : branches[answerIndex - 1].lastBuild.sourceBranch;
+
+  function getChoiceName(branchStatus: models.BranchStatus, index: number): string {
+    const branch = branchStatus.lastBuild.sourceBranch;
+    const branchConfiguration = branchConfigurations[index];
+    let name = branch;
+    switch (_.first(_.keys(branchConfiguration.toolsets))) {
+      case "android":
+        const android = branchConfiguration.toolsets.android;
+        return name + ` (android module: ${android.module} build variant: ${android.buildVariant})`;
+      case "xcode":
+        const xcode = branchConfiguration.toolsets.xcode;
+        return name + ` (project/workspace: ${xcode.projectOrWorkspacePath}, shared scheme: ${xcode.scheme})`;
+      case "xamarin": return name;
+      case "javascript": return name;
+      default: return name;
+    }
+  }
 }
 
 async function inquireProjectDescription(app: IRemoteApp, dir: string,
