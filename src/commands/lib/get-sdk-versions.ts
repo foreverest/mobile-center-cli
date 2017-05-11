@@ -1,4 +1,6 @@
 import { downloadString } from "../../util/misc/promisfied-https";
+import { execAll } from "../../util/misc/helpers";
+import * as _ from "lodash";
 
 export async function getSdkVersions(platform: string): Promise<string[]> {
   const repository = getRepositoryForPlatform(platform);
@@ -15,8 +17,18 @@ export async function getSdkVersions(platform: string): Promise<string[]> {
   }
 
   async function getReleasesVersions(repo: string) {
-    const response = await downloadString(`https://api.github.com/repos/Microsoft/${repo}/releases`);
-    const releases = JSON.parse(response.result) as any[];
-    return releases.map(x => x.name as string).map(x => x.replace(/[^0-9.]/g, "")).reverse();
+    const releases: string[] = [];
+    while (true) {
+      const after = releases.length ? `?after=${_.last(releases)}` : "";
+      const response = await downloadString(`https://github.com/Microsoft/${repo}/releases${after}`);
+      const matches = execAll(/<h1 class="release-title">[\s\S]+?>(.+?)<\/a>/, response.result);
+      if (!matches || !matches.length) {
+        break;
+      }
+
+      matches.forEach(x => releases.push(x[1]));
+    }
+
+    return releases.map(x => x.replace(/[^0-9.]/g, "")).reverse();
   }
 }
