@@ -160,6 +160,9 @@ async function inquireNewAppDetails(appName: string, os: string, platform: strin
   if (osAnswer === "Android") {
     platforms.push("Java", "React-Native", "Xamarin");
   }
+  if (!platforms.length)
+    throw failure(ErrorCodes.Exception, `Unsupported OS: ${os}`);
+    
   question = {
     type: "list",
     name: "platform",

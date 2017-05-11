@@ -185,11 +185,15 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
   iosPodfilePath: string): Promise<ProjectDescription> {
 
   if (app.os.toLowerCase() === "android" && app.platform.toLowerCase() === "java") {
+    const gradleModules = await findGradleModules(dir);
+    if (!gradleModules.length)
+      throw failure(ErrorCodes.Exception, "No Android/Java modules found.")
+
     let question: Question = {
       type: "list",
       name: "moduleName",
       message: "Gradle module name",
-      choices: await findGradleModules(dir)
+      choices: gradleModules
     };
     const answers = await prompt.autoAnsweringQuestion(question, androidModule);
     const moduleName = answers.moduleName as string;
@@ -214,11 +218,15 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
   }
 
   if (app.os.toLowerCase() === "ios" && app.platform.toLowerCase() === "objective-c-swift") {
+    const projectsAndWorkspaces = await findProjectsAndWorkspaces(dir);
+    if (!projectsAndWorkspaces.length)
+      throw failure(ErrorCodes.Exception, "No XCode projects/workspaces found.")
+
     let question: Question = {
       type: "list",
       name: "projectOrWorkspacePath",
       message: "Path to project or workspace",
-      choices: await findProjectsAndWorkspaces(dir)
+      choices: projectsAndWorkspaces
     };
     let answers = await prompt.autoAnsweringQuestion(question, iosProjectPath);
     const projectOrWorkspacePathAnswer = answers.projectOrWorkspacePath as string;

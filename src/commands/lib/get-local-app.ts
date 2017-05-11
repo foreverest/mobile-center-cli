@@ -139,12 +139,16 @@ async function inquireOsPlatform(osDefault: string, platformDefault: string): Pr
   const os = answers.os as string;
 
   const platforms: string[] = [];
-  if (os === "iOS") {
+  if (os.toLowerCase() === "ios") {
     platforms.push("Objective-C-Swift", "React-Native", "Xamarin");
   }
-  if (os === "Android") {
+  if (os.toLowerCase() === "android") {
     platforms.push("Java", "React-Native", "Xamarin");
   }
+
+  if (!platforms.length)
+    throw failure(ErrorCodes.Exception, `Unsupported OS: ${os}`);
+
   question = {
     type: "list",
     name: "platform",
