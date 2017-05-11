@@ -9,42 +9,53 @@ import * as request from "request";
 import { Answers, Question, Questions, Separator } from "../../util/interaction/prompt";
 import { ErrorCodes, failure } from "../../util/commandline/index";
 import { out, prompt } from "../../util/interaction";
-import { downloadFile } from "../../util/misc/promisfied-https";
 
 import { ClientResponse } from "../../util/apis/index";
 import { IAppBase } from './models/i-app-base';
 import { ILocalApp } from "./models/i-local-app";
+import { downloadFile } from "../../util/misc/promisfied-https";
 import { glob } from "../../util/misc/promisfied-glob";
 
-export default async function getLocalApp(dir: string,
-  osArg: string,
-  platformArg: string,
-  sampleAppArg: boolean,
-  noSampleAppArg: boolean): Promise<ILocalApp> {
+export async function getLocalApp(dir: string,
+  os: string,
+  platform: string,
+  sampleApp: boolean): Promise<ILocalApp> {
 
   const detectedApp = await detectLocalApp(dir);
   if (detectedApp && await prompt.confirm(`An existing ${detectedApp.os}/${detectedApp.platform} app is detected. Do you want to use it?`))
     return detectedApp;
 
-  const sampleApp = sampleAppArg !== noSampleAppArg ? sampleAppArg : null;
   const question: Question = {
     type: "confirm",
     name: "confirm",
     message: "Do you want to download sample app?",
     default: false
   };
-  const answers = await prompt.autoAnsweringQuestion(question, sampleApp);
+  const answers = await prompt.autoAnsweringQuestion(question, sampleApp || undefined);
 
   if (answers.confirm) {
-    const app = await inquireOsPlatform(osArg, platformArg);
+    const app = await inquireOsPlatform(os, platform);
     return downloadSampleApp(dir, app);
   }
 
   return null;
 }
 
-async function downloadSampleApp(appDir: string, app: IAppBase): Promise<ILocalApp> {
+export async function getLocalAppNonInteractive(dir: string,
+  os: string,
+  platform: string,
+  sampleApp: boolean): Promise<ILocalApp> {
 
+  if (sampleApp) {
+    if (!os || !platform)
+      throw failure(ErrorCodes.IllegalCommand, "In non-interactive mode --os and --platform arguments are expected.");
+    return downloadSampleApp(dir, { os, platform });
+  }
+
+  return os && platform ? { dir, os, platform } : null;
+}
+
+async function downloadSampleApp(appDir: string, app: IAppBase): Promise<ILocalApp> {
   const { uri, name } = getArchiveUrl(app.os, app.platform);
   const response = await out.progress(`Downloading the file... ${uri}`, downloadFile(uri));
   await out.progress("Unzipping the archive...", unzip(appDir, response.result));

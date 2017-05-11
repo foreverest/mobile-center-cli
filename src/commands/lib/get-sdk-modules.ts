@@ -1,11 +1,28 @@
 import * as _ from "lodash";
 
+import { ErrorCodes, failure } from "../../util/commandline/index";
+
 import { MobileCenterSdkModule } from "./models/mobilecenter-sdk-module";
 import { Question } from "../../util/interaction/prompt";
 import { prompt } from "../../util/interaction";
 
-export default async function getSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
+export async function getSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
   return inquireSdkModules(analytics, crashes, distribute);
+}
+
+export async function getSdkModulesNonInteractive(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
+  let sdkModules = MobileCenterSdkModule.None;
+  if (analytics)
+    sdkModules |= MobileCenterSdkModule.Analytics;
+  if (crashes)
+    sdkModules |= MobileCenterSdkModule.Crashes;
+  if (distribute)
+    sdkModules |= MobileCenterSdkModule.Distribute;
+
+  if (!sdkModules)
+    throw failure(ErrorCodes.IllegalCommand, "You must provide at least one of --analytics, --crashes or --distribute flags.");
+  
+  return sdkModules;
 }
 
 async function inquireSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {

@@ -1,15 +1,17 @@
-import { IBuildGradle, ISourceSet, IBuildVariant } from './models/build-gradle';
-import { IMainActivity, IImportStatement, IStartSdkStatement } from "./models/main-activity";
+import * as _ from "lodash"
 import * as fs from "async-file";
 import * as path from "path";
-import { XmlWalker, XmlBag } from "../util/xml-walker";
-import * as _ from "lodash"
-import { ActivityWalker, ActivityBag } from "./activity-walker";
-import removeComments from "../util/remove-comments";
+
+import { ActivityBag, ActivityWalker } from "./activity-walker";
+import { IBuildGradle, IBuildVariant, ISourceSet } from './models/build-gradle';
+import { IImportStatement, IMainActivity, IStartSdkStatement } from "./models/main-activity";
+import { XmlBag, XmlWalker } from "../util/xml-walker";
+
 import { MobileCenterSdkModule } from "../models/mobilecenter-sdk-module";
+import removeComments from "../util/remove-comments";
 
 export default async function collectMainActivityInfo(buildGradle: IBuildGradle, buildVariantName: string): Promise<IMainActivity> {
-  const buildVariant = _.find(buildGradle.buildVariants, x => x.name === buildVariantName);
+  const buildVariant = _.find(buildGradle.buildVariants, x => x.name.toLowerCase() === buildVariantName.toLowerCase());
   if (!buildVariant)
     throw new Error("Incorrect build variant");
 

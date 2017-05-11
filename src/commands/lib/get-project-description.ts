@@ -3,6 +3,7 @@ import * as fs from "async-file";
 import * as path from "path";
 
 import { ClientResponse, MobileCenterClient, clientRequest, models } from "../../util/apis/index";
+import { ErrorCodes, failure } from "../../util/commandline/index";
 import { Question, Questions } from "../../util/interaction/prompt";
 import { out, prompt } from "../../util/interaction/index";
 
@@ -12,7 +13,7 @@ import { ProjectDescription } from "./models/project-description";
 import collectBuildGradleInfo from "./android/collect-build-gradle-info";
 import { glob } from "../../util/misc/promisfied-glob";
 
-export default async function getProjectDescription(client: MobileCenterClient,
+export async function getProjectDescription(client: MobileCenterClient,
   localApp: ILocalApp,
   remoteApp: IRemoteApp,
   branchName: string,
@@ -56,6 +57,63 @@ export default async function getProjectDescription(client: MobileCenterClient,
 
   if (inputManually)
     return inquireProjectDescription(remoteApp, localApp.dir, androidModule, androidBuildVariant, iosProjectPath, iosPodfilePath);
+}
+
+export async function getProjectDescriptionNonInteractive(client: MobileCenterClient,
+  localApp: ILocalApp,
+  remoteApp: IRemoteApp,
+  branchName: string,
+  androidModule: string,
+  androidBuildVariant: string,
+  iosProjectPath: string,
+  iosPodfilePath: string): Promise<ProjectDescription> {
+
+  let projectDescription: ProjectDescription;
+
+  const branches = await getBranchesWithBuilds(client, remoteApp);
+
+  if (branchName) {
+    const branchResponse = await out.progress("Getting branch configuration ...",
+      clientRequest<models.BranchConfiguration>(cb =>
+        client.branchConfigurations.get(branchName, remoteApp.ownerName, remoteApp.appName, cb)));
+
+    if (branchResponse.response.statusCode >= 400) {
+      throw failure(ErrorCodes.Exception, "An error during getting branch configuration.");
+    } else {
+      if (branchResponse.result.toolsets.android) {
+        return {
+          moduleName: androidModule || branchResponse.result.toolsets.android.module,
+          buildVariant: androidBuildVariant || branchResponse.result.toolsets.android.buildVariant
+        }
+      }
+      if (branchResponse.result.toolsets.xcode) {
+        return {
+          projectOrWorkspacePath: iosProjectPath || branchResponse.result.toolsets.xcode.projectOrWorkspacePath,
+          podfilePath: iosPodfilePath || branchResponse.result.toolsets.xcode.podfilePath
+        }
+      }
+    }
+  }
+
+  if (remoteApp.os.toLowerCase() === "android" && remoteApp.platform.toLowerCase() === "java") {
+    if (!androidModule || !androidBuildVariant)
+      throw failure(ErrorCodes.IllegalCommand, "You must specify --android-module and --android-build-variant arguments.");
+    return {
+      moduleName: androidModule,
+      buildVariant: androidBuildVariant
+    }
+  }
+
+  if (remoteApp.os.toLowerCase() === "ios" && remoteApp.platform.toLowerCase() === "objective-c-swift") {
+    if (!androidModule || !androidBuildVariant)
+      throw failure(ErrorCodes.IllegalCommand, "You must specify --ios-project-path and --ios-podfile-path arguments.");
+    return {
+      projectOrWorkspacePath: iosProjectPath,
+      podfilePath: iosPodfilePath
+    }
+  }
+
+  throw failure(ErrorCodes.Exception, "Unsupported OS/Platform");
 }
 
 async function getBranchesWithBuilds(client: MobileCenterClient, app: IRemoteApp): Promise<models.BranchStatus[]> {

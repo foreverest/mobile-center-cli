@@ -1,11 +1,15 @@
 // sdk integrate command
 
-import * as path from "path";
 import * as _ from "lodash";
+import * as path from "path";
 
 import { Command, CommandArgs, CommandResult, ErrorCodes, defaultValue, failure, getCurrentApp, help, required, success } from "../util/commandline";
 import { IAndroidJavaProjectDescription, IIosObjectiveCSwiftProjectDescription, ProjectDescription } from "./lib/models/project-description";
 import { checkAndroidJava, injectAndroidJava } from "./lib/android/operations";
+import { getLocalApp, getLocalAppNonInteractive } from "./lib/get-local-app";
+import { getProjectDescription, getProjectDescriptionNonInteractive } from "./lib/get-project-description";
+import { getRemoteApp, getRemoteAppNonInteractive } from "./lib/get-remote-app";
+import { getSdkModules, getSdkModulesNonInteractive } from "./lib/get-sdk-modules";
 import { hasArg, longName, shortName } from './../util/commandline/option-decorators';
 import { out, prompt } from "../util/interaction";
 
@@ -13,13 +17,9 @@ import { IRemoteApp } from "./lib/models/i-remote-app";
 import { MobileCenterClient } from "../util/apis";
 import collectBuildGradleInfo from "./lib/android/collect-build-gradle-info";
 import collectMainActivityInfo from "./lib/android/collect-main-activity-info";
-import getLocalApp from "./lib/get-local-app";
-import getProjectDescription from "./lib/get-project-description";
-import getRemoteApp from "./lib/get-remote-app";
-import getSdkModules from "./lib/get-sdk-modules";
+import { getSdkVersions } from "./lib/get-sdk-versions";
 import { injectSdkIos } from "./lib/ios/inject-sdk-ios";
 import { reportProject } from "./lib/format-project";
-import { getSdkVersions } from "./lib/get-sdk-versions";
 
 @help("Integrate Mobile Center SDK into the project")
 export default class IntegrateSDKCommand extends Command {
@@ -77,10 +77,6 @@ export default class IntegrateSDKCommand extends Command {
   @longName("sample-app")
   sampleApp: boolean;
 
-  @help("Not initialize sample app")
-  @longName("no-sample-app")
-  noSampleApp: boolean;
-
   @help("Gradle module name for Android app")
   @longName("android-module")
   @hasArg
@@ -99,7 +95,11 @@ export default class IntegrateSDKCommand extends Command {
   @help("Podfile path for iOS app")
   @longName("ios-podfile-path")
   @hasArg
-  iosPodfilePath: string
+  iosPodfilePath: string;
+
+  @help("Non-interactive mode")
+  @longName("non-interactive")
+  nonInteractive: boolean;
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
     let os = this.os;
@@ -109,14 +109,20 @@ export default class IntegrateSDKCommand extends Command {
       appDir = path.join(process.cwd(), appDir);
     }
     try {
-      let localApp = await getLocalApp(appDir, os, platform, this.sampleApp, this.noSampleApp);
+      let localApp = this.nonInteractive ?
+        await getLocalAppNonInteractive(appDir, os, platform, this.sampleApp) :
+        await getLocalApp(appDir, os, platform, this.sampleApp);
+        
       if (localApp) {
         appDir = localApp.dir;
         os = localApp.os;
         platform = localApp.platform;
       }
 
-      const remoteApp = await getRemoteApp(client, this.appName, os, platform, this.createNew);
+      const remoteApp = this.nonInteractive ?
+        await getRemoteAppNonInteractive(client, this.appName, os, platform, this.createNew) :
+        await getRemoteApp(client, this.appName, os, platform, this.createNew);
+        
       if (!localApp) {
         localApp = {
           dir: appDir,
@@ -125,18 +131,27 @@ export default class IntegrateSDKCommand extends Command {
         };
       }
 
-      const projectDescription = await getProjectDescription(client, localApp, remoteApp, 
-        this.branchName, 
-        this.androidModule, 
-        this.androidBuildVariant,
-        this.iosProjectPath,
-        this.iosPodfilePath);
+      const projectDescription = this.nonInteractive ? 
+        await getProjectDescriptionNonInteractive(client, localApp, remoteApp, 
+          this.branchName, 
+          this.androidModule, 
+          this.androidBuildVariant,
+          this.iosProjectPath,
+          this.iosPodfilePath) :
+        await getProjectDescription(client, localApp, remoteApp, 
+          this.branchName, 
+          this.androidModule, 
+          this.androidBuildVariant,
+          this.iosProjectPath,
+          this.iosPodfilePath);
 
-      const sdkModules = await getSdkModules(this.analytics, this.crashes, this.distribute);
+      const sdkModules = this.nonInteractive ?
+        await getSdkModulesNonInteractive(this.analytics, this.crashes, this.distribute) :
+        await getSdkModules(this.analytics, this.crashes, this.distribute);
 
       reportProject(remoteApp, projectDescription);
 
-      if (!await prompt.confirm("Do you really want to integrate SDK into the project?")) {
+      if (!this.nonInteractive && !await prompt.confirm("Do you really want to integrate SDK into the project?")) {
         out.text("Mobile Center SDK integration was cancelled");
         return success();
       }
@@ -176,7 +191,7 @@ export default class IntegrateSDKCommand extends Command {
           break;
       }
     } catch (err) {
-      return failure(ErrorCodes.Exception, err);
+      return err.errorMessage ? err : failure(ErrorCodes.Exception, err);
     }
 
     out.text("Success.");
