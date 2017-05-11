@@ -173,10 +173,10 @@ async function inquireBranchName(branches: models.BranchStatus[], branchConfigur
     switch (branchConfiguration && _.first(_.keys(branchConfiguration.toolsets))) {
       case "android":
         const android = branchConfiguration.toolsets.android;
-        return name + ` (android module: ${android.module} build variant: ${android.buildVariant})`;
+        return `${name} [Android Module: ${android.module}, Build Variant: ${android.buildVariant}]`;
       case "xcode":
         const xcode = branchConfiguration.toolsets.xcode;
-        return name + ` (project/workspace: ${xcode.projectOrWorkspacePath}, shared scheme: ${xcode.scheme})`;
+        return `${name} [Project/Workspace: ${xcode.projectOrWorkspacePath}, Shared Scheme: ${xcode.scheme}]`;
       case "xamarin": return name;
       case "javascript": return name;
       default: return name;
