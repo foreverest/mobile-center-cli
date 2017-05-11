@@ -13,6 +13,8 @@ import { ProjectDescription } from "./models/project-description";
 import collectBuildGradleInfo from "./android/collect-build-gradle-info";
 import { glob } from "../../util/misc/promisfied-glob";
 
+type BranchConfigurations = { [branchName: string]: models.BranchConfiguration };
+
 export async function getProjectDescription(client: MobileCenterClient,
   localApp: ILocalApp,
   remoteApp: IRemoteApp,
@@ -131,23 +133,28 @@ async function getBranchesWithBuilds(client: MobileCenterClient, app: IRemoteApp
     .value();
 }
 
-async function getBranchConfigurations(client: MobileCenterClient, app: IRemoteApp, branches: models.BranchStatus[]): Promise<models.BranchConfiguration[]> {
+async function getBranchConfigurations(client: MobileCenterClient, app: IRemoteApp, branches: models.BranchStatus[]): Promise<BranchConfigurations> {
   let branchConfigurationsRequestResponse: ClientResponse<models.BranchConfiguration>[];
   try {
     branchConfigurationsRequestResponse = await out.progress(`Getting branch configurations of app ${app.appName}...`,
       Promise.all(branches.map(branch =>
         clientRequest<models.BranchConfiguration>((cb) => client.branchConfigurations.get(branch.lastBuild.sourceBranch, app.ownerName, app.appName, cb)))));
   } catch (error) {
-    return [];
+    return {};
   }
 
-  return branchConfigurationsRequestResponse.map(x => x.result);
+  const branchConfigurations: BranchConfigurations = {};
+  for (let i = 0, length = branchConfigurationsRequestResponse.length; i < length; i++) {
+    branchConfigurations[branches[i].lastBuild.sourceBranch] = branchConfigurationsRequestResponse[i].result;
+  }
+
+  return branchConfigurations;
 }
 
-async function inquireBranchName(branches: models.BranchStatus[], branchConfigurations: models.BranchConfiguration[], branchName: string): Promise<string> {
+async function inquireBranchName(branches: models.BranchStatus[], branchConfigurations: BranchConfigurations, branchName: string): Promise<string> {
   const choices = [
     "Input manually..."
-  ].concat(branches.map((x, i) => getChoiceName(x, i)));
+  ].concat(branches.map(x => getChoiceName(x.lastBuild.sourceBranch)));
 
   const question: Question = {
     type: "list",
@@ -155,16 +162,15 @@ async function inquireBranchName(branches: models.BranchStatus[], branchConfigur
     message: "Where do you want to get project settings from?",
     choices: choices
   };
-  const answers = await prompt.autoAnsweringQuestion(question, branchName);
+  const answers = await prompt.autoAnsweringQuestion(question, getChoiceName(branchName));
   const answerIndex = choices.indexOf((answers as any).answer);
 
   return answerIndex === 0 ? null : branches[answerIndex - 1].lastBuild.sourceBranch;
 
-  function getChoiceName(branchStatus: models.BranchStatus, index: number): string {
-    const branch = branchStatus.lastBuild.sourceBranch;
-    const branchConfiguration = branchConfigurations[index];
-    let name = branch;
-    switch (_.first(_.keys(branchConfiguration.toolsets))) {
+  function getChoiceName(branchName: string): string {
+    const branchConfiguration = branchConfigurations[branchName];
+    let name = branchName;
+    switch (branchConfiguration && _.first(_.keys(branchConfiguration.toolsets))) {
       case "android":
         const android = branchConfiguration.toolsets.android;
         return name + ` (android module: ${android.module} build variant: ${android.buildVariant})`;
