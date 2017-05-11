@@ -96,20 +96,24 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
       bag.endOfImportBlockIndex = 0;
     }
 
-    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag.endOfImportBlockIndex, "MobileCenter", true);
-    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag.endOfImportBlockIndex, "MobileCenterAnalytics", this.context.analyticsEnabled);
-    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag.endOfImportBlockIndex, "MobileCenterCrashes", this.context.crashesEnabled);
-    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag.endOfImportBlockIndex, "MobileCenterDistribute", this.context.distributeEnabled);
+    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenter", true);
+    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterAnalytics", this.context.analyticsEnabled);
+    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterCrashes", this.context.crashesEnabled);
+    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterDistribute", this.context.distributeEnabled);
 
     return appDelegateContent;
   }
 
-  private addOrRemoveImport(appDelegateContent: string, index: number, item: string, add: boolean) {
-    const match = new RegExp(`@import +${item} *?;\r?\n`).exec(appDelegateContent.substr(0, index));
+  private addOrRemoveImport(appDelegateContent: string, bag: TextWalkerObjectiveCInjectBag, item: string, add: boolean) {
+    const match = new RegExp(`@import +${item} *?;\r?\n`).exec(appDelegateContent.substr(0, bag.endOfImportBlockIndex));
     if (match && !add) {
+      bag.endOfImportBlockIndex -= match[0].length;
       return Helpers.splice(appDelegateContent, match.index, match[0].length, "");
     } else if (!match && add) {
-      return Helpers.splice(appDelegateContent, index, 0, `@import ${item};\n`);
+      const index = bag.endOfImportBlockIndex;
+      const importText = `@import ${item};\n`;
+      bag.endOfImportBlockIndex += importText.length;
+      return Helpers.splice(appDelegateContent, index, 0, importText);
     } else {
       return appDelegateContent;
     }
