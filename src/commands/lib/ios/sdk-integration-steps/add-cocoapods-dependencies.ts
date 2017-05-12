@@ -44,19 +44,23 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
       content += "end";
     }
 
-    let serviceIndex = -1;
-    const serviceRegex = new RegExp(` *?pod +${quote}${service}${quote}.*\r?\n?`);
+    const serviceRegex = new RegExp(`(\r?\n) *?pod +${quote}${service}${quote}.*\r?\n?`);
     match = serviceRegex.exec(content.substr(startIndex, endIndex - startIndex));
     if (match) {
-      serviceIndex = startIndex + match.index;
+      const matchIndex = match.index + match[1].length;
+      const matchLength = match[0].length - match[1].length;
+      const serviceIndex = startIndex + matchIndex;
+      if (add) {
+        return Helpers.splice(content, serviceIndex, matchLength, `  ${serviceVersion}\n`)
+      } else {
+        return Helpers.splice(content, serviceIndex, matchLength, "");
+      }
     }
 
-    if (!add) {
-      return (~serviceIndex) ? Helpers.splice(content, serviceIndex, match[0].length, "") : content;
+    if (add) {
+      return Helpers.splice(content, endIndex, 0, `  ${serviceVersion}\n`);
+    } else {
+      return content;
     }
-
-    return serviceIndex >= 0
-      ? Helpers.splice(content, serviceIndex, match[0].length, `  ${serviceVersion}\n`)
-      : Helpers.splice(content, endIndex, 0, `  ${serviceVersion}\n`);
   }
 }
