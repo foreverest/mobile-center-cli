@@ -81,13 +81,7 @@ async function getMainActivityName(projectPath: string, sourceSets: ISourceSet[]
       continue;
     const mainActivityTag = _.find(applicationTag.children.filter(x => x.name === "activity"),
       x => x.children.filter(x => x.name === "intent-filter")
-        .some(x => 
-          x.children
-            .some(x => x.name === "action" && x.attributes["android:name"] === "android.intent.action.MAIN") &&
-          x.children
-            .some(x => x.name === "category" && (x.attributes["android:name"] === "android.intent.category.LAUNCHER" 
-                                              || x.attributes["android:name"] === "android.intent.category.LEANBACK_LAUNCHER"))
-        )
+        .some(x => x.children.some(x => x.name === "action" && x.attributes["android:name"] === "android.intent.action.MAIN"))
     );
     if (!mainActivityTag)
       continue;
