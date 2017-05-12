@@ -247,14 +247,12 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
 }
 
 async function findGradleModules(dir: string): Promise<string[]> {
-  const files = await glob(path.join(dir, "**/!(android-sample)/build.gradle")); // TODO: Handle fake modules
+  const files = await glob(path.join(dir, "**/build.gradle"));
   const modules: string[] = [];
   for (let file of files) {
     let contents = await fs.readTextFile(file);
     if (/apply plugin:\s*['"]com\.android\.application['"]/m.test(contents)) {
-      const matches = path.relative(dir, file).match(/\/?(.+)[\/\\]build\.gradle/);
-      if (matches && matches[1])
-        modules.push(matches[1]);
+        modules.push(path.relative(dir, path.dirname(file)) || ".");
     }
   }
   return modules;
