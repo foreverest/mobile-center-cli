@@ -1,7 +1,7 @@
 import * as Path from "path";
 import * as FS from "async-file";
 import * as Helpers from "../../../../util/misc/helpers";
-import { TextWalkerC, TextWalkerCBag } from "../text-walker-c";
+import { CodeWalker, CodeBag } from "../../util/code-walker"
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
 import { SdkIntegrationError } from "../../util/sdk-integration";
 
@@ -17,17 +17,16 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
   }
 
   private analyze(appDelegateContent: string): TextWalkerObjectiveCInjectBag {
-    const textWalker = new TextWalkerC(appDelegateContent, new TextWalkerObjectiveCInjectBag());
-    textWalker.addTrap(bag => bag.significant
-      && bag.blockLevel === 0
+    const textWalker = new CodeWalker(appDelegateContent, new TextWalkerObjectiveCInjectBag());
+    textWalker.addTrap(bag =>
+      bag.blockLevel === 0
       && !bag.isWithinImplementation
       && /[@#]import\s+?[\w"<>\/\.]+?;?\r?\n$/.test(textWalker.backpart),
       bag => {
         bag.endOfImportBlockIndex = textWalker.position;
       });
     textWalker.addTrap(bag =>
-      bag.significant
-      && bag.blockLevel === 0
+      bag.blockLevel === 0
       && textWalker.forepart.startsWith("@implementation"),
       bag => {
         const matches = /^@implementation\s+?\w+?\r?\n/.exec(textWalker.forepart);
@@ -37,9 +36,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
         }
       });
     textWalker.addTrap(
-      bag =>
-        bag.significant
-        && bag.blockLevel === 0
+      bag => bag.blockLevel === 0
         && bag.isWithinImplementation
         && textWalker.currentChar === "@"
         && textWalker.forepart.startsWith("@end"),
@@ -47,8 +44,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
     );
     textWalker.addTrap(
       bag =>
-        bag.significant
-        && bag.isWithinImplementation
+        bag.isWithinImplementation
         && bag.blockLevel === 1
         && bag.applicationFuncStartIndex < 0
         && textWalker.currentChar === '{',
@@ -62,8 +58,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
     );
     textWalker.addTrap(
       bag =>
-        bag.significant
-        && bag.blockLevel === 0
+        bag.blockLevel === 0
         && bag.isWithinApplicationMethod
         && textWalker.currentChar === "}",
       bag => {
@@ -72,8 +67,8 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
       }
     );
     textWalker.addTrap(
-      bag => bag.significant
-        && bag.isWithinApplicationMethod
+      bag =>
+        bag.isWithinApplicationMethod
         && bag.msMobileCenterStartCallStartIndex < 0
         && /^\[\s*?MSMobileCenter\s+?start/.test(textWalker.forepart),
       bag => {
@@ -148,7 +143,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
   }
 }
 
-class TextWalkerObjectiveCInjectBag extends TextWalkerCBag {
+class TextWalkerObjectiveCInjectBag extends CodeBag {
   isWithinImplementation: boolean = false;
   wasWithinImplementation: boolean = false;
   endOfImportBlockIndex: number = -1;

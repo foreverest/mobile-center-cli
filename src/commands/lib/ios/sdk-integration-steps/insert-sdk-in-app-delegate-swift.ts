@@ -1,7 +1,7 @@
 import * as Path from "path";
 import * as FS from "async-file";
 import * as Helpers from "../../../../util/misc/helpers";
-import { TextWalkerC, TextWalkerCBag } from "../text-walker-c";
+import { CodeWalker, CodeBag } from "../../util/code-walker"
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
 import { SdkIntegrationError } from "../../util/sdk-integration";
 
@@ -17,17 +17,16 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
   }
 
   private analyze(appDelegateContent: string): TextWalkerSwiftInjectBag {
-    const textWalker = new TextWalkerC(appDelegateContent, new TextWalkerSwiftInjectBag());
-    textWalker.addTrap(bag => bag.significant
-      && bag.blockLevel === 0
+    const textWalker = new CodeWalker(appDelegateContent, new TextWalkerSwiftInjectBag());
+    textWalker.addTrap(bag =>
+      bag.blockLevel === 0
       && !bag.wasWithinClass
       && /import\s+?[\w\.]+?\r?\n$/.test(textWalker.backpart),
       bag => {
         bag.endOfImportBlockIndex = textWalker.position;
       });
     textWalker.addTrap(bag =>
-      bag.significant
-      && bag.blockLevel === 1
+      bag.blockLevel === 1
       && textWalker.currentChar === "{",
       bag => {
         const matches = /\s*([a-z]+?\s+?|)(class|extension)\s+?\w+?(?!\w).*?$/.exec(textWalker.backpart);
@@ -38,18 +37,16 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
       });
     textWalker.addTrap(
       bag =>
-        bag.significant &&
-        bag.blockLevel === 0 &&
-        bag.isWithinClass &&
-        textWalker.currentChar === "}",
+        bag.blockLevel === 0
+        && bag.isWithinClass
+        && textWalker.currentChar === "}",
       bag => bag.isWithinClass = false
     );
     textWalker.addTrap(
       bag =>
-        bag.significant &&
-        bag.isWithinClass &&
-        bag.blockLevel === 2 &&
-        textWalker.currentChar === '{',
+        bag.isWithinClass
+        && bag.blockLevel === 2
+        && textWalker.currentChar === '{',
       bag => {
         const matches = /^\s*([a-z]+?\s+?|)func\s+?application\s*?\(/m.exec(textWalker.backpart)
         if (matches && bag.applicationFuncStartIndex < 0) {
@@ -61,10 +58,9 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
     );
     textWalker.addTrap(
       bag =>
-        bag.significant &&
-        bag.blockLevel === 1 &&
-        bag.isWithinMethod &&
-        textWalker.currentChar === "}",
+        bag.blockLevel === 1
+        && bag.isWithinMethod
+        && textWalker.currentChar === "}",
       bag => {
         bag.isWithinMethod = false;
         if (bag.isWithinApplicationMethod) {
@@ -74,8 +70,7 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
       }
     );
     textWalker.addTrap(
-      bag => bag.significant
-        && bag.isWithinApplicationMethod
+      bag => bag.isWithinApplicationMethod
         && bag.msMobileCenterStartCallStartIndex < 0
         && textWalker.forepart.startsWith("MSMobileCenter.start"),
       bag => {
@@ -150,7 +145,7 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
   }
 }
 
-class TextWalkerSwiftInjectBag extends TextWalkerCBag {
+class TextWalkerSwiftInjectBag extends CodeBag {
   isWithinClass: boolean = false;
   wasWithinClass: boolean = false;
   isWithinMethod: boolean = false;

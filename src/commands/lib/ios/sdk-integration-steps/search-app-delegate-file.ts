@@ -2,7 +2,6 @@ import * as Path from "path";
 import * as FS from "async-file";
 import * as Glob from "glob";
 import * as Helpers from "../../../../util/misc/helpers";
-import { TextWalkerC, TextWalkerCBag } from "../text-walker-c";
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
 import { SdkIntegrationError } from "../../util/sdk-integration";
 import { InsertSdkInAppDelegateObjectiveC } from "./insert-sdk-in-app-delegate-objective-c";
