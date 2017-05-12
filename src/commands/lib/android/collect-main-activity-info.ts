@@ -14,7 +14,7 @@ export default async function collectMainActivityInfo(buildGradle: IBuildGradle,
   if (!buildVariant)
     throw new Error("Incorrect build variant");
 
-  const sourceSets = getSourceSets(buildVariant);
+  const sourceSets = getSourceSets(buildGradle, buildVariant);
   const fullName = await getMainActivityName(buildGradle.path, sourceSets);
   const name = fullName.match(/\w+$/)[0];
   const { mainActivityPath, mainActivityContents} = 
@@ -32,7 +32,7 @@ export default async function collectMainActivityInfo(buildGradle: IBuildGradle,
   };
 }
 
-function getSourceSets(buildVariant: IBuildVariant): ISourceSet[] {
+function getSourceSets(buildGradle: IBuildGradle, buildVariant: IBuildVariant): ISourceSet[] {
   let sourceSets: ISourceSet[] = []
 
   sourceSets.push({ name: buildVariant.name });
@@ -43,11 +43,14 @@ function getSourceSets(buildVariant: IBuildVariant): ISourceSet[] {
   sourceSets.push({ name: "main" });
 
   sourceSets.forEach(sourceSet => {
-    sourceSet.manifestSrcFile = sourceSet.manifestSrcFile ?
-      removeQuotes(sourceSet.manifestSrcFile) :
+    let buildGradleSourceSet = _(buildGradle.sourceSets).find(ss => ss.name === sourceSet.name);
+    
+    sourceSet.manifestSrcFile = buildGradleSourceSet && buildGradleSourceSet.manifestSrcFile ?
+      removeQuotes(buildGradleSourceSet.manifestSrcFile) :
       `src/${sourceSet.name}/AndroidManifest.xml`;
-    sourceSet.javaSrcDirs = sourceSet.javaSrcDirs && sourceSet.javaSrcDirs.length ?
-      sourceSet.javaSrcDirs.map(removeQuotes) :
+    
+    sourceSet.javaSrcDirs = buildGradleSourceSet && buildGradleSourceSet.javaSrcDirs && buildGradleSourceSet.javaSrcDirs.length ?
+      buildGradleSourceSet.javaSrcDirs.map(removeQuotes) :
       [`src/${sourceSet.name}/java`];
   });
 

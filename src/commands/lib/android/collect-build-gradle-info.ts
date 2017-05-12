@@ -77,13 +77,19 @@ async function getSourceSets(buildGradleContents: string): Promise<ISourceSet[]>
 
   const sourceSets: ISourceSet[] = [];
   if (buildGradle && buildGradle.android && buildGradle.android.sourceSets) {
-    sourceSets.push(...Object.keys(buildGradle.android.sourceSets).map(sourceSetName => {
-      return <ISourceSet>{
-        name: sourceSetName,
-        manifestSrcFile: buildGradle.android.sourceSets[sourceSetName]["manifest.srcFile"],
-        javaSrcDirs: buildGradle.android.sourceSets[sourceSetName]["java.srcDirs"]
-      }
-    }));
+    for (let sourceSet of Object.keys(buildGradle.android.sourceSets)) {
+      let matches = /[^\.]+/.exec(sourceSet);
+      if (matches && matches[0] && !sourceSets.some(ss => ss.name === matches[0]))
+        sourceSets.push({ name: matches[0] });
+    }
+    for (let sourceSet of sourceSets) {
+      sourceSet.manifestSrcFile = buildGradle.android.sourceSets[sourceSet.name] ?
+        buildGradle.android.sourceSets[sourceSet.name]["manifest.srcFile"] :
+        buildGradle.android.sourceSets[sourceSet.name + ".manifest.srcFile"];
+      sourceSet.javaSrcDirs = buildGradle.android.sourceSets[sourceSet.name] ?
+        buildGradle.android.sourceSets[sourceSet.name]["java.srcDirs"] :
+        buildGradle.android.sourceSets[sourceSet.name + ".java.srcDirs"];
+    }
   }
 
   return sourceSets;
