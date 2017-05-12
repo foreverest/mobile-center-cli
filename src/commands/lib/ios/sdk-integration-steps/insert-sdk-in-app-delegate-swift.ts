@@ -29,7 +29,7 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
       bag.blockLevel === 1
       && textWalker.currentChar === "{",
       bag => {
-        const matches = /\s*([a-z]+?\s+?|)(class|extension)\s+?\w+?(?!\w).*?$/.exec(textWalker.backpart);
+        const matches = /@UIApplicationMain\s*([a-z]+?\s+?|)class\s+?\w+?\s*?:[\s\S]+?$/.exec(textWalker.backpart);
         if (matches && matches[0]) {
           bag.isWithinClass = true;
           bag.wasWithinClass = true;
