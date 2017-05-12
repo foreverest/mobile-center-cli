@@ -1,9 +1,12 @@
-import { IBuildGradle, IBuildVariant, ISourceSet, IDependenciesBlock } from './models/build-gradle';
-import * as fs from "async-file";
-const gjs = require("gradlejs");
 import * as _ from "lodash"
+import * as fs from "async-file";
+
 import { CodeBag, CodeWalker } from "../util/code-walker";
-import removeComments from "../util/remove-comments";
+import { IBuildGradle, IBuildVariant, IDependenciesBlock, ISourceSet } from './models/build-gradle';
+
+const gjs = require("gradlejs");
+
+
 
 export default async function collectBuildGradleInfo(buildGradlePath: string): Promise<IBuildGradle> {
   let contents = await fs.readTextFile(buildGradlePath, "utf8");
@@ -88,19 +91,19 @@ async function getSourceSets(buildGradleContents: string): Promise<ISourceSet[]>
 
 function analyze(contents: string): CleanBag {
   let cleanBag = new CleanBag();
-  let textWalker = new CodeWalker<CleanBag>(contents, cleanBag);
+  let walker = new CodeWalker<CleanBag>(contents, cleanBag);
 
   // Collecting dependencies blocks
-  textWalker.addTrap(
+  walker.addTrap(
     bag =>
       bag.blockLevel === 1 &&
       !bag.currentBlock &&
-      textWalker.prevChar === "{",
+      walker.prevChar === "{",
     bag => {
-      let matches = removeComments(textWalker.backpart).match(/dependencies\s*{$/);
+      let matches = walker.backpart.match(/dependencies\s*{$/);
       if (matches && matches[0]) {
         bag.currentBlock = {
-          position: textWalker.position,
+          position: walker.position,
           text: "",
           defs: [],
           compiles: []
@@ -108,14 +111,14 @@ function analyze(contents: string): CleanBag {
       }
     }
   );
-  textWalker.addTrap(
+  walker.addTrap(
     bag =>
       bag.blockLevel === 1 &&
       bag.currentBlock &&
-      textWalker.nextChar === "}",
+      walker.nextChar === "}",
     bag => {
       if (bag.currentBlock.compiles.length) {
-        bag.currentBlock.text = contents.substring(bag.currentBlock.position, textWalker.position + 1);
+        bag.currentBlock.text = contents.substring(bag.currentBlock.position, walker.position + 1);
         bag.dependenciesBlocks.push(bag.currentBlock);
       }
       bag.currentBlock = null;
@@ -123,39 +126,39 @@ function analyze(contents: string): CleanBag {
   );
 
   // Catching defs
-  textWalker.addTrap(
+  walker.addTrap(
     bag =>
       bag.currentBlock &&
-      textWalker.forepart.startsWith("def"),
+      walker.forepart.startsWith("def"),
     bag => {
-      let matches = removeComments(textWalker.forepart).match(/^def\s+(\w+)\s*=\s*["'](.+?)["']/);
+      let matches = walker.forepart.match(/^def\s+(\w+)\s*=\s*["'](.+?)["']/);
       if (matches && matches[1] && matches[2])
         bag.currentBlock.defs.push({
           text: matches[0],
           name: matches[1],
           value: matches[2],
-          position: textWalker.position - bag.currentBlock.position
+          position: walker.position - bag.currentBlock.position
         });
     }
   );
 
   // Catching compiles
-  textWalker.addTrap(
+  walker.addTrap(
     bag =>
       bag.currentBlock &&
-      textWalker.forepart.startsWith("compile"),
+      walker.forepart.startsWith("compile"),
     bag => {
-      let matches = removeComments(textWalker.forepart).match(/^compile\s*["']com.microsoft.azure.mobile:mobile-center-(analytics|crashes|distribute):[^]+?["']/);
+      let matches = walker.forepart.match(/^compile\s*["']com.microsoft.azure.mobile:mobile-center-(analytics|crashes|distribute):[^]+?["']/);
       if (matches && matches[1])
         bag.currentBlock.compiles.push({
           text: matches[0],
           moduleName: matches[1],
-          position: textWalker.position - bag.currentBlock.position
+          position: walker.position - bag.currentBlock.position
         });
     }
   );
 
-  return textWalker.walk();
+  return walker.walk();
 }
 
 class CleanBag extends CodeBag {

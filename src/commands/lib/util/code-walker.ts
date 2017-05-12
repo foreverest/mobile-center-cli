@@ -3,7 +3,7 @@ import TextWalker from "./text-walker";
 export class CodeWalker<TBag extends CodeBag> extends TextWalker<TBag> {
 
   constructor(text: string, bag: TBag) {
-    super(text, bag);
+    super(replaceComments(text), bag);
 
     // Block levels
     this.addTrap(
@@ -17,30 +17,6 @@ export class CodeWalker<TBag extends CodeBag> extends TextWalker<TBag> {
         this.currentChar === "}",
       bag =>
         bag.blockLevel--
-    );
-
-    // Single-line comments
-    this.addTrap(
-      bag =>
-        this.forepart.substr(0, 2) === "//",
-      bag => {
-        let matches = this.forepart.match(/^\/\/[^]*?\n/);
-        if (matches && matches[0])
-          this.jump(matches[0].length);
-      }
-
-    );
-
-    // Multi-line comments
-    this.addTrap(
-      bag =>
-        this.forepart.substr(0, 2) === "/*",
-      bag => {
-        let matches = this.forepart.match(/^\/\*[^]*?\*\//);
-        if (matches && matches[0])
-          this.jump(matches[0].length);
-      }
-
     );
 
     // Quotes
@@ -60,3 +36,21 @@ export class CodeWalker<TBag extends CodeBag> extends TextWalker<TBag> {
 export class CodeBag {
   blockLevel: number = 0;
 }
+
+function replaceComments(text: string): string {
+  let result = text;
+  for (let comment of standardComments) {
+    while (true) {
+      let matches = comment.exec(result);
+      if (!matches || !matches[0])
+        break;
+      result = result.substr(0, matches.index) + ' '.repeat(matches[0].length) + result.substr(matches.index + matches[0].length);
+    }
+  }
+  return result;
+}
+
+const standardComments: RegExp[] = [
+  /\/\/.*/g,
+  /\/\*[^]*?\*\//g
+]
