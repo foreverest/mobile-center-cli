@@ -232,7 +232,7 @@ function analyze(code: string, activityName: string): CleanBag {
       textWalker.currentChar === ";",
     bag => {
       let matches = textWalker.forepart.match(/^\s*;\s*/);
-      bag.startSdkStatement.text = code.substring(bag.startSdkStatement.position, bag.startSdkStatement.position + matches[0].length);  
+      bag.startSdkStatement.text = code.substring(bag.startSdkStatement.position, textWalker.position + matches[0].length);
     }
   );
 
