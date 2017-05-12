@@ -17,7 +17,7 @@ import { IRemoteApp } from "./lib/models/i-remote-app";
 import { MobileCenterClient } from "../util/apis";
 import collectBuildGradleInfo from "./lib/android/collect-build-gradle-info";
 import collectMainActivityInfo from "./lib/android/collect-main-activity-info";
-import { getSdkVersions } from "./lib/get-sdk-versions";
+import { getLatestSdkVersion } from "./lib/get-sdk-versions";
 import { injectSdkIos } from "./lib/ios/inject-sdk-ios";
 import { reportProject } from "./lib/format-project";
 
@@ -156,8 +156,7 @@ export default class IntegrateSDKCommand extends Command {
         return success();
       }
 
-      const sdkVersions = await getSdkVersions(remoteApp.platform.toLowerCase());
-      const latestSdkVersion = _.last(sdkVersions);
+      const latestSdkVersion = await getLatestSdkVersion(remoteApp.platform.toLowerCase());
 
       switch (remoteApp.os.toLowerCase()) {
         case "android":
