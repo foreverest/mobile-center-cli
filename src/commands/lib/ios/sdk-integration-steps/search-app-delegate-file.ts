@@ -11,7 +11,7 @@ export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
   protected async step() {
     const swiftAppDelegate = await this.searchSwiftAppDelegate();
     const objectiveCAppDelegate = await this.searchObjectiveCAppDelegate();
-    const path = [swiftAppDelegate, objectiveCAppDelegate].filter(x => !!x).sort((a, b) => a.split("/").length - b.split("/").length)[0];
+    const path = [swiftAppDelegate, objectiveCAppDelegate].filter(x => !!x).sort((a, b) => a.split("\\").length - b.split("\\").length)[0];
 
     if (!path) {
       throw new SdkIntegrationError("There is no AppDelegate file");
@@ -29,7 +29,7 @@ export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
     const files = Glob.sync("**/*." + ext, { cwd: this.context.projectRootDirectory, absolute: true } as any);
     for (const file of files) {
       if (await isAppDelegateFile(file)) {
-        return file;
+        return Path.normalize(file);
       }
     }
   }
@@ -62,7 +62,7 @@ export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
 
     const srcPath = Path.join(path, "../", Path.basename(path, Path.extname(path))) + ".m";
     if (await this.isObjectiveCAppDelegateFile(srcPath, implementationName)) {
-      return srcPath;
+      return Path.normalize(srcPath);
     }
 
     return this.searchInFiles("h", path => this.isObjectiveCAppDelegateFile(path, implementationName));

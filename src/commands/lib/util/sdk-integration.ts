@@ -1,7 +1,7 @@
 import { MobileCenterSdkModule } from "../models/mobilecenter-sdk-module";
 
 export abstract class SdkIntegrationStepBase<T> {
-  protected nextStep: SdkIntegrationStepBase<T>;
+  public nextStep: SdkIntegrationStepBase<T>;
   protected context: T;
 
   public async run(context: T): Promise<void> {
