@@ -38,7 +38,7 @@ export default class TextWalker<TBag> {
   }
 
   walk(): TBag {
-    while (!this._isStoped && this.step());
+    while (this.step());
     return this._bag;
   }
 
@@ -47,7 +47,7 @@ export default class TextWalker<TBag> {
   }
 
   step(): boolean {
-    if (this._position >= this.text.length)
+    if (this._isStoped || this._position >= this.text.length)
       return false;
     this.handleTraps();
     if (this._jumpPending) {

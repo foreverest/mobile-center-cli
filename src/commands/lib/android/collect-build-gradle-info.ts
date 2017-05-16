@@ -13,7 +13,7 @@ export default async function collectBuildGradleInfo(buildGradlePath: string): P
 
   const buildVariants = await getBuildVariants(contents);
   const sourceSets = await getSourceSets(contents);
-  
+
   const info = analyze(contents);
 
   return {
@@ -41,7 +41,7 @@ async function getBuildVariants(buildGradleContents: string): Promise<IBuildVari
     }
 
     if (buildGradle.android.productFlavors) { //TODO: handle flavorDimensions & variantFilters
-      productFlavors = Object.keys(buildGradle.android.productFlavors).filter(x => x.trim());
+      productFlavors = Object.keys(buildGradle.android.productFlavors).filter(x => x && x.trim());
     }
   }
 
@@ -62,13 +62,19 @@ async function getBuildVariants(buildGradleContents: string): Promise<IBuildVari
 
 function getBuildVariant(buildType: string, productFlavors?: string[]): IBuildVariant {
   let name = buildType;
-  if (productFlavors)
+  if (productFlavors) {
     productFlavors.forEach(pf => name = pf + name[0].toLocaleUpperCase() + name.substr(1));
-  return {
-    name,
-    buildType,
-    productFlavors
-  };
+    return {
+      name,
+      buildType,
+      productFlavors
+    };
+  } else {
+    return {
+      name,
+      buildType
+    };
+  }
 }
 
 async function getSourceSets(buildGradleContents: string): Promise<ISourceSet[]> {
@@ -83,12 +89,15 @@ async function getSourceSets(buildGradleContents: string): Promise<ISourceSet[]>
         sourceSets.push({ name: matches[0] });
     }
     for (let sourceSet of sourceSets) {
-      sourceSet.manifestSrcFile = buildGradle.android.sourceSets[sourceSet.name] ?
-        buildGradle.android.sourceSets[sourceSet.name]["manifest.srcFile"] :
-        buildGradle.android.sourceSets[sourceSet.name + ".manifest.srcFile"];
-      sourceSet.javaSrcDirs = buildGradle.android.sourceSets[sourceSet.name] ?
-        buildGradle.android.sourceSets[sourceSet.name]["java.srcDirs"] :
-        buildGradle.android.sourceSets[sourceSet.name + ".java.srcDirs"];
+      if (buildGradle.android.sourceSets[sourceSet.name] && buildGradle.android.sourceSets[sourceSet.name]["manifest.srcFile"])
+        sourceSet.manifestSrcFile = buildGradle.android.sourceSets[sourceSet.name]["manifest.srcFile"];
+      else if (buildGradle.android.sourceSets[sourceSet.name + ".manifest.srcFile"])
+        sourceSet.manifestSrcFile = buildGradle.android.sourceSets[sourceSet.name + ".manifest.srcFile"];
+      
+      if (buildGradle.android.sourceSets[sourceSet.name] && buildGradle.android.sourceSets[sourceSet.name]["java.srcDirs"])
+        sourceSet.javaSrcDirs = buildGradle.android.sourceSets[sourceSet.name]["java.srcDirs"];
+      else if (buildGradle.android.sourceSets[sourceSet.name + ".java.srcDirs"])
+        sourceSet.javaSrcDirs = buildGradle.android.sourceSets[sourceSet.name + ".java.srcDirs"];
     }
   }
 
