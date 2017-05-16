@@ -6,7 +6,7 @@ import { SdkIntegrationError } from "../../util/sdk-integration";
 import { SearchAppDelegateFile } from "./search-app-delegate-file";
 
 export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
-  protected nextStep = new SearchAppDelegateFile();
+  public nextStep = new SearchAppDelegateFile();
   protected async step() {
     this.context.podfilePath = this.context.podfilePath || Path.join(this.context.projectRootDirectory, "Podfile");
 
@@ -15,6 +15,7 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
     content = this.addOrRemoveService(content, `MobileCenter/MobileCenterAnalytics`, this.context.analyticsEnabled);
     content = this.addOrRemoveService(content, `MobileCenter/MobileCenterCrashes`, this.context.crashesEnabled);
     content = this.addOrRemoveService(content, `MobileCenter/MobileCenterDistribute`, this.context.distributeEnabled);
+   
     this.context.enqueueAction(() => FS.writeTextFile(this.context.podfilePath, content, "utf8"));
   }
 
@@ -30,7 +31,7 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
     const quote = `['\u2018\u2019"]`;
     const serviceVersion = `pod '${service}'` + (this.context.sdkVersion ? `, '${this.context.sdkVersion}'` : "");
     let match: RegExpExecArray;
-    const targetRegExp = new RegExp(`(target\\s+?:?${quote}?${Helpers.escapeRegExp(this.context.projectName)}${quote}?\\s+?do[\\s\\S]*?\r?\n)end`, "i");
+    const targetRegExp = new RegExp(`(target\\s+?:?${quote}?${Helpers.escapeRegExp(this.context.projectName)}${quote}?\\s+?do[\\s\\S]*?\r?\n)\\s*?end`, "i");
     match = targetRegExp.exec(content);
     let startIndex: number;
     let endIndex: number;
