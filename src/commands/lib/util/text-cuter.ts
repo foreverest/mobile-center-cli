@@ -57,8 +57,7 @@ export default class TextCutter {
   }
 
   cutLineIf(predicate: (line: string) => any): TextCutter {
-    let start = this.seekPrev("\n") || -1;
-    start++;
+    let start = this.seekPrev("\n") + 1;
     let end = this.seekNext("\n") || this._text.length - 1;
     let length = end - start + 1;
     let line = this.read(start, end - 1);
@@ -94,7 +93,7 @@ export default class TextCutter {
         break;
     }
 
-    return last < 0 ? null : last;
+    return this._fragments[i].start + last;
   }
 
   private seekNext(sample: string): number {

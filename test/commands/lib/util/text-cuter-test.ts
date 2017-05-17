@@ -60,4 +60,16 @@ describe("TextCutter", function () {
     // Assert
     expect(textCutter.result).to.equal("line0\nline3");
   });
+
+  it("text starts with new line", function () {
+    // Arrange
+    const textCutter = new TextCutter("\n" + testText);
+
+    // Act
+    textCutter.goto(7).cut(5).cutEmptyLine();
+    textCutter.goto(1).cut(5).cutEmptyLine();
+    
+    // Assert
+    expect(textCutter.result).to.equal("\nline2\nline3");
+  });
 });
