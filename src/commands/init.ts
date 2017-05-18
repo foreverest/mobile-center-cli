@@ -215,11 +215,18 @@ export default class IntegrateSDKCommand extends Command {
         default:
           break;
       }
+
+      out.text("");
+      out.text("Congratulations! We have successfully integrated SDK(s) into the project.");
+      
+      if (remoteApp.os.toLowerCase() === "ios" && remoteApp.platform.toLowerCase() === "objective-c-swift") {
+        out.text("***NOTE: We have inserted all neccessary dependencies in the Podfile.");
+        out.text("But don't forget to run `pod install` to install your newly defined pod.");
+      }
+
     } catch (err) {
       return err.errorMessage ? err : failure(ErrorCodes.Exception, err);
     }
-    out.text("");
-    out.text("Congratulations! We have successfully integrated SDK(s) into the project.");
     return success();
   }
 }
