@@ -102,8 +102,8 @@ export default class IntegrateSDKCommand extends Command {
   nonInteractive: boolean;
 
   async run(client: MobileCenterClient): Promise<CommandResult> {
-    let os = this.os;
-    let platform = this.platform;
+    let os = normalizeOs(this.os);
+    let platform = normalizePlatform(this.platform);
     let appDir = this.appDir || "./";
     if (!path.isAbsolute(appDir)) {
       appDir = path.join(process.cwd(), appDir);
@@ -195,5 +195,23 @@ export default class IntegrateSDKCommand extends Command {
 
     out.text("Success.");
     return success();
+  }
+}
+
+function normalizeOs(os: string): string {
+  switch (os && os.toLowerCase()) {
+    case "android": return "Android";
+    case "ios": return "iOS";
+    default: return os;
+  }
+}
+
+function normalizePlatform(platform: string): string {
+  switch (platform && platform.toLowerCase()) {
+    case "java": return "Java";
+    case "objective-c-swift": return "Objective-C-Swift";
+    case "react-native": return "React-Native";
+    case "xamarin": return "Xamarin";
+    default: return platform;
   }
 }
