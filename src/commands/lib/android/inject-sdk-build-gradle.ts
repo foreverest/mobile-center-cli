@@ -11,6 +11,8 @@ export default function injectSdkBuildGradle(code: string, sdkVersion: string, s
       lines.push('    compile "com.microsoft.azure.mobile:mobile-center-crashes:${mobileCenterSdkVersion}"');
     if (sdkModules & MobileCenterSdkModule.Distribute)
       lines.push('    compile "com.microsoft.azure.mobile:mobile-center-distribute:${mobileCenterSdkVersion}"');
+    if (sdkModules & MobileCenterSdkModule.Push)
+      lines.push('    compile "com.microsoft.azure.mobile:mobile-center-push:${mobileCenterSdkVersion}"');
     lines.push("}");
   }
   let result: string = code.trim() + "\r\n";

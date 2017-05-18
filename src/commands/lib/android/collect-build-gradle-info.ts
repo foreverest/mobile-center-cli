@@ -163,7 +163,7 @@ function analyze(contents: string): CleanBag {
       bag.currentBlock &&
       walker.forepart.startsWith("compile"),
     bag => {
-      let matches = walker.forepart.match(/^compile\s*["']com.microsoft.azure.mobile:mobile-center-(analytics|crashes|distribute):[^]+?["']/);
+      let matches = walker.forepart.match(/^compile\s*["']com.microsoft.azure.mobile:mobile-center-(analytics|crashes|distribute|push):[^]+?["']/);
       if (matches && matches[1])
         bag.currentBlock.compiles.push({
           text: matches[0],

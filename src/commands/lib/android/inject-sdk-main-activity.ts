@@ -1,4 +1,5 @@
 import { ActivityBag, ActivityWalker } from "./activity-walker";
+
 import { MobileCenterSdkModule } from "../models/mobilecenter-sdk-module";
 
 export default function injectSdkMainActivity(code: string, activityName: string, appSecret: string, sdkModules: MobileCenterSdkModule): string {
@@ -25,6 +26,10 @@ export default function injectSdkMainActivity(code: string, activityName: string
   if (sdkModules & MobileCenterSdkModule.Distribute) {
     importStatements.push("import com.microsoft.azure.mobile.distribute.Distribute;");
     sdkModulesList.push("Distribute.class");
+  }
+  if (sdkModules & MobileCenterSdkModule.Push) {
+    importStatements.push("import com.microsoft.azure.mobile.push.Push;");
+    sdkModulesList.push("Push.class");
   }
 
   let startSdkStatements: string[] = [];

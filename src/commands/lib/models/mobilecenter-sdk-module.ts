@@ -3,5 +3,6 @@ export enum MobileCenterSdkModule {
   Analytics = 1,
   Crashes = 2,
   Distribute = 4,
-  All = 7
+  Push = 8,
+  All = 15
 }

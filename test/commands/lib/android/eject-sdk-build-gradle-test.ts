@@ -16,6 +16,7 @@ dependencies {
     compile "com.microsoft.azure.mobile:mobile-center-analytics:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-crashes:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-distribute:\${mobileCenterSdkVersion}"
+    compile "com.microsoft.azure.mobile:mobile-center-push:\${mobileCenterSdkVersion}"
 }`,
         dependenciesBlocks: [{
           position: 15,
@@ -24,6 +25,7 @@ dependencies {
     compile "com.microsoft.azure.mobile:mobile-center-analytics:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-crashes:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-distribute:\${mobileCenterSdkVersion}"
+    compile "com.microsoft.azure.mobile:mobile-center-push:\${mobileCenterSdkVersion}"
 `,
           defs: [{
             position: 5,
@@ -43,6 +45,10 @@ dependencies {
             position: 226,
             text: `compile "com.microsoft.azure.mobile:mobile-center-distribute:\${mobileCenterSdkVersion}"`,
             moduleName: "distribute"
+          },{
+            position: 318,
+            text: `compile "com.microsoft.azure.mobile:mobile-center-push:\${mobileCenterSdkVersion}"`,
+            moduleName: "push"
           }]
         }]
       }

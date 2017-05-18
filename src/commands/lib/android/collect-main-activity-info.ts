@@ -139,7 +139,7 @@ function analyze(code: string, activityName: string): CleanBag {
       bag.blockLevel === 0 &&
       walker.forepart.startsWith("import"),
     bag => {
-      let regexp = /^import\s+com\s*.\s*microsoft\s*.\s*azure\s*.\s*mobile\s*.\s*(MobileCenter|analytics\s*.\s*Analytics|crashes\s*.\s*Crashes|distribute\s*.\s*Distribute)\s*;\s*?\n?/;
+      let regexp = /^import\s+com\s*.\s*microsoft\s*.\s*azure\s*.\s*mobile\s*.\s*(MobileCenter|analytics\s*.\s*Analytics|crashes\s*.\s*Crashes|distribute\s*.\s*Distribute|push\s*.\s*Push)\s*;\s*?\n?/;
       let matches = walker.forepart.match(regexp);
       if (matches && matches[0]) {
         bag.importStatements.push({
@@ -219,6 +219,16 @@ function analyze(code: string, activityName: string): CleanBag {
     bag =>
       bag.startSdkStatement.modules |= MobileCenterSdkModule.Distribute
   );
+  walker.addTrap(
+    bag =>
+      bag.isWithinMethod &&
+      bag.startSdkStatement &&
+      bag.parenthesisLevel === 1 &&
+      walker.forepart.startsWith("Push") &&
+      /^Push\s*\.\s*class/.test(walker.forepart),
+    bag =>
+      bag.startSdkStatement.modules |= MobileCenterSdkModule.Push
+  );
 
   // Catching ";"
   walker.addTrap(
@@ -242,6 +252,7 @@ function getModule(moduleName: string): MobileCenterSdkModule {
     case /analytics\s*.\s*Analytics/.test(moduleName): return MobileCenterSdkModule.Analytics;
     case /crashes\s*.\s*Crashes/.test(moduleName): return MobileCenterSdkModule.Crashes;
     case /distribute\s*.\s*Distribute/.test(moduleName): return MobileCenterSdkModule.Distribute;
+    case /push\s*.\s*Push/.test(moduleName): return MobileCenterSdkModule.Push;
     default: return MobileCenterSdkModule.None;
   }
 }

@@ -6,11 +6,11 @@ import { MobileCenterSdkModule } from "./models/mobilecenter-sdk-module";
 import { Question } from "../../util/interaction/prompt";
 import { prompt } from "../../util/interaction";
 
-export async function getSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
-  return inquireSdkModules(analytics, crashes, distribute);
+export async function getSdkModules(analytics: boolean, crashes: boolean, distribute: boolean, push: boolean): Promise<MobileCenterSdkModule> {
+  return inquireSdkModules(analytics, crashes, distribute, push);
 }
 
-export async function getSdkModulesNonInteractive(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
+export async function getSdkModulesNonInteractive(analytics: boolean, crashes: boolean, distribute: boolean, push: boolean): Promise<MobileCenterSdkModule> {
   let sdkModules = MobileCenterSdkModule.None;
   if (analytics)
     sdkModules |= MobileCenterSdkModule.Analytics;
@@ -18,14 +18,16 @@ export async function getSdkModulesNonInteractive(analytics: boolean, crashes: b
     sdkModules |= MobileCenterSdkModule.Crashes;
   if (distribute)
     sdkModules |= MobileCenterSdkModule.Distribute;
+  if (push)
+    sdkModules |= MobileCenterSdkModule.Push;
 
   if (!sdkModules)
-    throw failure(ErrorCodes.IllegalCommand, "You must provide at least one of --analytics, --crashes or --distribute flags.");
+    throw failure(ErrorCodes.IllegalCommand, "You must provide at least one of --analytics, --crashes, --distribute or --push flags.");
   
   return sdkModules;
 }
 
-async function inquireSdkModules(analytics: boolean, crashes: boolean, distribute: boolean): Promise<MobileCenterSdkModule> {
+async function inquireSdkModules(analytics: boolean, crashes: boolean, distribute: boolean, push: boolean): Promise<MobileCenterSdkModule> {
   let questions: Question = {
     type: "checkbox",
     name: "modules",
@@ -39,6 +41,9 @@ async function inquireSdkModules(analytics: boolean, crashes: boolean, distribut
     }, {
       name: "Distribute",
       value: "distribute"
+    }, {
+      name: "Push",
+      value: "push"
     }],
     validate: (x: any) => {
       return x && x.length ? true : "Please choose at least one module";
@@ -52,6 +57,8 @@ async function inquireSdkModules(analytics: boolean, crashes: boolean, distribut
     modules.push("crashes");
   if (distribute)
     modules.push("distribute");
+  if (push)
+    modules.push("push");
   if (!modules.length)
      modules = null;
 
@@ -64,6 +71,8 @@ async function inquireSdkModules(analytics: boolean, crashes: boolean, distribut
     sdkModules |= MobileCenterSdkModule.Crashes;
   if (_.includes(modules, "distribute"))
     sdkModules |= MobileCenterSdkModule.Distribute;
+  if (_.includes(modules, "push"))
+    sdkModules |= MobileCenterSdkModule.Push;
 
   return sdkModules;
 }

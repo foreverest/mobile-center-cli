@@ -38,6 +38,7 @@ dependencies {
     compile "com.microsoft.azure.mobile:mobile-center-analytics:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-crashes:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-distribute:\${mobileCenterSdkVersion}"
+    compile "com.microsoft.azure.mobile:mobile-center-push:\${mobileCenterSdkVersion}"
 }
 `;
 
@@ -67,6 +68,7 @@ const expectedResult: IBuildGradle = {
     compile "com.microsoft.azure.mobile:mobile-center-analytics:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-crashes:\${mobileCenterSdkVersion}"
     compile "com.microsoft.azure.mobile:mobile-center-distribute:\${mobileCenterSdkVersion}"
+    compile "com.microsoft.azure.mobile:mobile-center-push:\${mobileCenterSdkVersion}"
 `,
     defs: [{
       position: 383,
@@ -86,6 +88,10 @@ const expectedResult: IBuildGradle = {
       position: 604,
       text: 'compile "com.microsoft.azure.mobile:mobile-center-distribute:\${mobileCenterSdkVersion}"',
       moduleName: "distribute"
+    },{
+      position: 696,
+      text: 'compile "com.microsoft.azure.mobile:mobile-center-push:\${mobileCenterSdkVersion}"',
+      moduleName: "push"
     }]
   }]
 }

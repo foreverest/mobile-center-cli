@@ -73,6 +73,10 @@ export default class IntegrateSDKCommand extends Command {
   @longName("distribute")
   distribute: boolean;
 
+  @help("Enable Push module")
+  @longName("push")
+  push: boolean;
+
   @help("Initialize sample app")
   @longName("sample-app")
   sampleApp: boolean;
@@ -146,8 +150,8 @@ export default class IntegrateSDKCommand extends Command {
           this.iosPodfilePath);
 
       const sdkModules = this.nonInteractive ?
-        await getSdkModulesNonInteractive(this.analytics, this.crashes, this.distribute) :
-        await getSdkModules(this.analytics, this.crashes, this.distribute);
+        await getSdkModulesNonInteractive(this.analytics, this.crashes, this.distribute, this.push) :
+        await getSdkModules(this.analytics, this.crashes, this.distribute, this.push);
 
       reportProject(remoteApp, projectDescription);
 
