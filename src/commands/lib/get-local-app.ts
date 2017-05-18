@@ -19,23 +19,34 @@ import { glob } from "../../util/misc/promisfied-glob";
 export async function getLocalApp(dir: string,
   os: string,
   platform: string,
-  sampleApp: boolean): Promise<ILocalApp> {
-
+  sampleApp: boolean): Promise<ILocalApp> {  
+  
   const detectedApp = await detectLocalApp(dir);
-  if (detectedApp && await prompt.confirm(`An existing ${detectedApp.os}/${detectedApp.platform} app is detected. Do you want to use it?`))
+  if (detectedApp) {
+    out.text("");
+    out.text(`An existing ${detectedApp.os}/${detectedApp.platform} app has been detected.`);
+    if (await prompt.confirm("Do you want to use it?"))
     return detectedApp;
-
+  } 
+  
+  out.text("");
+  out.text("If you don't have an app yet, we can download a sample one");
+  out.text("for you to have a starting point.");
   const question: Question = {
     type: "confirm",
     name: "confirm",
-    message: "Do you want to download sample app?",
+    message: "Do you want to download a sample app?",
     default: false
   };
   const answers = await prompt.autoAnsweringQuestion(question, sampleApp || undefined);
 
   if (answers.confirm) {
-    const app = await inquireOsPlatform(os, platform);
-    return downloadSampleApp(dir, app);
+    const appBase = await inquireOsPlatform(os, platform);
+    const app = await downloadSampleApp(dir, appBase);
+    out.text(`A sample ${app.os}/${app.platform} app has been succesfully downloaded`);
+    out.text("into the following folder:");
+    out.text(app.dir);
+    return app;
   }
 
   return null;
@@ -132,7 +143,7 @@ async function inquireOsPlatform(osDefault: string, platformDefault: string): Pr
   question = {
     type: "list",
     name: "os",
-    message: "Please specify OS",
+    message: "Please choose OS:",
     choices: ["Android", "iOS"]
   };
   answers = await prompt.autoAnsweringQuestion(question, osDefault);
@@ -152,7 +163,7 @@ async function inquireOsPlatform(osDefault: string, platformDefault: string): Pr
   question = {
     type: "list",
     name: "platform",
-    message: "Please specify platform",
+    message: "Please choose platform:",
     choices: platforms
   };
   answers = await prompt.autoAnsweringQuestion(question, platformDefault);

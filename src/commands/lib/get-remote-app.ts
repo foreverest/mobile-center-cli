@@ -12,6 +12,9 @@ export async function getRemoteApp(client: MobileCenterClient,
   platform: string,
   createNew: boolean): Promise<IRemoteApp> {
 
+  out.text("");
+  out.text("It's time to specify which Mobile Center app");
+  out.text("is associated with your local code.");
   if (!createNew) {
     let apps = await fetchApps(client);
     apps = apps.filter(app =>
@@ -30,7 +33,10 @@ export async function getRemoteApp(client: MobileCenterClient,
 
   if (createNew) {
     const newAppDetails = await inquireNewAppDetails(appName, os, platform);
-    return createApp(client, newAppDetails);
+    const app = await createApp(client, newAppDetails);
+    out.text(`A new ${app.ownerName}/${app.appName} (${app.os}/${app.platform}) app`);
+    out.text("has been succesfully created on the Mobile Center portal.");
+    return app;
   }
 }
 
@@ -124,11 +130,11 @@ async function createApp(client: MobileCenterClient, newAppDetails: models.AppRe
 
 async function inquireAppName(apps: models.AppResponse[], appName?: string): Promise<string> {
   const createNewText: string = "Create new...";
-
+  
   const question: Question = {
     type: "list",
     name: "appName",
-    message: "Please choose a Mobile Center app to work with",
+    message: "Mobile Center app to work with:",
     choices: [createNewText].concat(apps.map(app => `${app.owner.name}/${app.name}`))
   };
   const answers = await prompt.autoAnsweringQuestion(question, appName);
@@ -140,7 +146,7 @@ async function inquireNewAppDetails(appName: string, os: string, platform: strin
   let question: Question = {
     type: "input",
     name: "appName",
-    message: "Please specify new app's name"
+    message: "New app's name:"
   };
   let answers = await prompt.autoAnsweringQuestion(question, appName);
   const appNameAnswer = answers.appName as string;
@@ -148,7 +154,7 @@ async function inquireNewAppDetails(appName: string, os: string, platform: strin
   question = {
     type: "list",
     name: "os",
-    message: "Please specify new app's OS",
+    message: "New app's OS:",
     choices: ["iOS", "Android"]
   };
   answers = await prompt.autoAnsweringQuestion(question, os);
@@ -167,7 +173,7 @@ async function inquireNewAppDetails(appName: string, os: string, platform: strin
   question = {
     type: "list",
     name: "platform",
-    message: "Please specify new app's platform",
+    message: "New app's platform:",
     choices: platforms
   };
   answers = await prompt.autoAnsweringQuestion(question, platform);

@@ -23,7 +23,11 @@ export async function getProjectDescription(client: MobileCenterClient,
   androidBuildVariant: string,
   iosProjectPath: string,
   iosPodfilePath: string): Promise<ProjectDescription> {
-
+  
+  out.text("");
+  out.text("And now we are going to collect some information about your project.");
+  out.text("We can fetch it either from your build configuration");
+  out.text("on the Mobile Center portal or ask you to provide it manually.");
   let inputManually = false;
   let projectDescription: ProjectDescription;
 
@@ -198,7 +202,7 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
     let question: Question = {
       type: "list",
       name: "moduleName",
-      message: "Gradle module name",
+      message: "Gradle Module name:",
       choices: gradleModules
     };
     const answers = await prompt.autoAnsweringQuestion(question, androidModule);
@@ -210,7 +214,7 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
         let question: Question = {
           type: "list",
           name: "buildVariant",
-          message: "Build variant",
+          message: "Build Variant:",
           choices: buildGradle.buildVariants.map(x => x.name)
         };
         const answers = await prompt.autoAnsweringQuestion(question, androidBuildVariant);
@@ -231,7 +235,7 @@ async function inquireProjectDescription(app: IRemoteApp, dir: string,
     let question: Question = {
       type: "list",
       name: "projectOrWorkspacePath",
-      message: "Path to project or workspace",
+      message: "Project/Workspace path:",
       choices: projectsAndWorkspaces
     };
     let answers = await prompt.autoAnsweringQuestion(question, iosProjectPath);

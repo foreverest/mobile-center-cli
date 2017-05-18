@@ -112,6 +112,28 @@ export default class IntegrateSDKCommand extends Command {
     if (!path.isAbsolute(appDir)) {
       appDir = path.join(process.cwd(), appDir);
     }
+
+    if (!this.nonInteractive) {
+      out.text("This utility will walk you through integrating Mobile Center SDKs");
+      out.text("into either existing or sample project.");
+      out.text("");
+      out.text("During the steps of the process you will be asked to provide");
+      out.text("information about local app, remote Mobile Center app,");
+      out.text("as well as additional info about the project and integration settings.");
+      out.text("");
+      out.text("To use existing project you should either be in its folder");
+      out.text("or use the --app-dir argument.");
+      out.text("");
+      out.text("See `mobile-center help init` for comprehensive documentation");
+      out.text("on other CLI arguments.");
+      out.text("");
+      out.text("Press ^C at any time to quit.");
+      out.text("");
+      out.text("We will use the following directory to work in:");
+      out.text(appDir);
+      out.text("Let's start!");
+    }
+
     try {
       let localApp = this.nonInteractive ?
         await getLocalAppNonInteractive(appDir, os, platform, this.sampleApp) :
@@ -153,10 +175,10 @@ export default class IntegrateSDKCommand extends Command {
         await getSdkModulesNonInteractive(this.analytics, this.crashes, this.distribute, this.push) :
         await getSdkModules(this.analytics, this.crashes, this.distribute, this.push);
 
-      reportProject(remoteApp, projectDescription);
+      reportProject(remoteApp, projectDescription, sdkModules);
 
-      if (!this.nonInteractive && !await prompt.confirm("Do you really want to integrate SDK into the project?")) {
-        out.text("Mobile Center SDK integration was cancelled");
+      if (!this.nonInteractive && !await prompt.confirm("Do you really want to integrate SDK(s) into the project?")) {
+        out.text("Mobile Center SDKs integration was cancelled");
         return success();
       }
 
@@ -170,7 +192,7 @@ export default class IntegrateSDKCommand extends Command {
               const buildGradle = await collectBuildGradleInfo(path.join(appDir, androidJavaProjectDescription.moduleName, "build.gradle"));
               const mainActivity = await collectMainActivityInfo(buildGradle, androidJavaProjectDescription.buildVariant);
 
-              await out.progress("Integrating SDK into the project...",
+              await out.progress("Integrating SDKs into the project...",
                 injectAndroidJava(buildGradle,
                   mainActivity,
                   latestSdkVersion,
@@ -182,7 +204,7 @@ export default class IntegrateSDKCommand extends Command {
 
         case "ios":
           const iosObjectiveCSwiftProjectDescription = projectDescription as IIosObjectiveCSwiftProjectDescription;
-          await out.progress("Integrating SDK into the project...",
+          await out.progress("Integrating SDKs into the project...",
             injectSdkIos(path.join(appDir, iosObjectiveCSwiftProjectDescription.projectOrWorkspacePath),
               iosObjectiveCSwiftProjectDescription.podfilePath && path.join(appDir, iosObjectiveCSwiftProjectDescription.podfilePath),
               remoteApp.appSecret,
@@ -196,8 +218,8 @@ export default class IntegrateSDKCommand extends Command {
     } catch (err) {
       return err.errorMessage ? err : failure(ErrorCodes.Exception, err);
     }
-
-    out.text("Success.");
+    out.text("");
+    out.text("Congratulations! We have successfully integrated SDK(s) into the project.");
     return success();
   }
 }

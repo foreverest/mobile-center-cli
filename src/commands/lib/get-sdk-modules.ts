@@ -1,12 +1,15 @@
 import * as _ from "lodash";
 
 import { ErrorCodes, failure } from "../../util/commandline/index";
+import { out, prompt } from "../../util/interaction";
 
 import { MobileCenterSdkModule } from "./models/mobilecenter-sdk-module";
 import { Question } from "../../util/interaction/prompt";
-import { prompt } from "../../util/interaction";
 
 export async function getSdkModules(analytics: boolean, crashes: boolean, distribute: boolean, push: boolean): Promise<MobileCenterSdkModule> {
+  out.text("");
+  out.text("We almost done. The final thing to do is to select");
+  out.text("a set of Mobile Center SDK modules to integrate.");
   return inquireSdkModules(analytics, crashes, distribute, push);
 }
 
@@ -31,7 +34,7 @@ async function inquireSdkModules(analytics: boolean, crashes: boolean, distribut
   let questions: Question = {
     type: "checkbox",
     name: "modules",
-    message: "Which modules do you want to insert?",
+    message: "Which modules do you want to integrate?",
     choices: [{
       name: "Analytics",
       value: "analytics"
