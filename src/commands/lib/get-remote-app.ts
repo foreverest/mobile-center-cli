@@ -24,10 +24,11 @@ export async function getRemoteApp(client: MobileCenterClient,
       createNew = true;
     else 
       return fetchApp(client, appName);
+  } else if (createNew) {
+    await inquireAppName([]);
   }
 
   if (createNew) {
-    await inquireAppName([]);
     const newAppDetails = await inquireNewAppDetails(appName, os, platform);
     return createApp(client, newAppDetails);
   }
