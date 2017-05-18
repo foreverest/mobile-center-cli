@@ -61,4 +61,7 @@ export abstract class SdkIntegrationStepContextBase {
   public get distributeEnabled() {
     return (this.sdkModules & MobileCenterSdkModule.Distribute) === MobileCenterSdkModule.Distribute;
   }
+  public get pushEnabled() {
+    return (this.sdkModules & MobileCenterSdkModule.Push) === MobileCenterSdkModule.Push;
+  }
 }

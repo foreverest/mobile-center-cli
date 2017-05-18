@@ -15,6 +15,7 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
     content = this.addOrRemoveService(content, `MobileCenter/MobileCenterAnalytics`, this.context.analyticsEnabled);
     content = this.addOrRemoveService(content, `MobileCenter/MobileCenterCrashes`, this.context.crashesEnabled);
     content = this.addOrRemoveService(content, `MobileCenter/MobileCenterDistribute`, this.context.distributeEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterPush`, this.context.pushEnabled);
    
     this.context.enqueueAction(() => FS.writeTextFile(this.context.podfilePath, content, "utf8"));
   }

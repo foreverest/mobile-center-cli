@@ -95,6 +95,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
     appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterAnalytics", this.context.analyticsEnabled);
     appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterCrashes", this.context.crashesEnabled);
     appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterDistribute", this.context.distributeEnabled);
+    appDelegateContent = this.addOrRemoveImport(appDelegateContent, bag, "MobileCenterPush", this.context.pushEnabled);
 
     return appDelegateContent;
   }
@@ -134,6 +135,10 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
 
     if (this.context.distributeEnabled) {
       services.push("[MSDistribute class]");
+    }
+
+    if (this.context.pushEnabled) {
+      services.push("[MSPush class]");
     }
 
     const start = `[MSMobileCenter start:@"${this.context.appSecret}" withServices:@[${services.join(", ")}]];`
