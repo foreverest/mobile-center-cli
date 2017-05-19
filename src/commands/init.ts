@@ -174,15 +174,14 @@ export default class IntegrateSDKCommand extends Command {
       const sdkModules = this.nonInteractive ?
         await getSdkModulesNonInteractive(this.analytics, this.crashes, this.distribute, this.push) :
         await getSdkModules(this.analytics, this.crashes, this.distribute, this.push);
-
-      reportProject(remoteApp, projectDescription, sdkModules);
+      
+      const latestSdkVersion = await getLatestSdkVersion(remoteApp.platform.toLowerCase());
+      reportProject(remoteApp, projectDescription, sdkModules, latestSdkVersion);
 
       if (!this.nonInteractive && !await prompt.confirm("Do you really want to integrate SDK(s) into the project?")) {
         out.text("Mobile Center SDKs integration was cancelled");
         return success();
       }
-
-      const latestSdkVersion = await getLatestSdkVersion(remoteApp.platform.toLowerCase());
 
       switch (remoteApp.os.toLowerCase()) {
         case "android":
