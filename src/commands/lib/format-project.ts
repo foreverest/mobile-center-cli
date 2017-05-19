@@ -4,7 +4,7 @@ import { IRemoteApp } from "./models/i-remote-app";
 import { MobileCenterSdkModule } from "./models/mobilecenter-sdk-module";
 import { out } from "../../util/interaction";
 
-export function reportProject(app: IRemoteApp, projectDescription: ProjectDescription, sdkModules: MobileCenterSdkModule): void {
+export function reportProject(app: IRemoteApp, projectDescription: ProjectDescription, sdkModules: MobileCenterSdkModule, sdkVersion: string): void {
   out.text("");
   out.text("We have finished collecting all neccessary info.");
   out.text("Here is a short summary:");
@@ -14,6 +14,7 @@ export function reportProject(app: IRemoteApp, projectDescription: ProjectDescri
   data.push(["App Secret:", app.appSecret]);
   data.push(["OS:", app.os]);
   data.push(["Platform:", app.platform]);
+  data.push(["SDK Version:", sdkVersion]);
   
   switch (app.os) {
     case "Android":
