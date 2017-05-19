@@ -21,7 +21,7 @@ import { getLatestSdkVersion } from "./lib/get-sdk-versions";
 import { injectSdkIos } from "./lib/ios/inject-sdk-ios";
 import { reportProject } from "./lib/format-project";
 
-@help("Integrate Mobile Center SDK into the project")
+@help("Integrates Mobile Center SDKs into the project")
 export default class IntegrateSDKCommand extends Command {
   constructor(args: CommandArgs) {
     super(args);
