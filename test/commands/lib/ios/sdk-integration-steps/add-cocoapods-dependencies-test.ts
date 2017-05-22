@@ -11,8 +11,6 @@ import { forEachModules } from "./helpers";
 
 describe("AddCocoapodsDependencies", () => {
   async function runStep(podfileContent: string, sdkModules: MobileCenterSdkModule, sdkVersion?: string) {
-    const step = new AddCocoapodsDependencies();
-    step.nextStep = null;
     const podfilePath = Path.join(Os.tmpdir(), Math.random() * 10000000 + "-Podfile");
     if (podfileContent) {
       await Fs.writeTextFile(podfilePath, podfileContent);
@@ -21,7 +19,7 @@ describe("AddCocoapodsDependencies", () => {
     const context = new XcodeIntegrationStepContext(Os.tmpdir(), podfilePath, "***", sdkModules, sdkVersion);
     context.projectRootDirectory = Path.join(context.projectOrWorkspacePath, "../");
     context.projectName = "TestProject";
-    await step.run(context);
+    await new AddCocoapodsDependencies().run(context);
     await context.runActions();
     const content = context.podfilePath && Fs.readTextFile(context.podfilePath);
     if (context.podfilePath) {

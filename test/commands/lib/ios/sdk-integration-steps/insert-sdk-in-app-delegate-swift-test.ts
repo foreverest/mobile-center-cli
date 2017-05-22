@@ -12,13 +12,11 @@ import { MobileCenterSdkModule, getMobileCenterSdkModulesArray } from "../../../
 
 describe("InsertSdkInAppDelegateSwift", () => {
   async function runStep(content: string, sdkModules: MobileCenterSdkModule) {
-    const step = new InsertSdkInAppDelegateSwift();
-    step.nextStep = null;
     const appDelegatePath = Path.join(Os.tmpdir(), Math.random() * 10000000 + "-AppDelegate.swift");
     await Fs.writeTextFile(appDelegatePath, content);
     const context = new XcodeIntegrationStepContext(null, null, "***", sdkModules, null);
     context.appDelegateFile = appDelegatePath;
-    await step.run(context);
+    await new InsertSdkInAppDelegateSwift().run(context);
     await context.runActions();
     return await Fs.readTextFile(appDelegatePath);
   }

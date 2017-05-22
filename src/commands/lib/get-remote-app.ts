@@ -5,12 +5,14 @@ import { out, prompt } from "../../util/interaction/index";
 
 import { IRemoteApp } from "./models/i-remote-app";
 import { toDefaultApp } from "../../util/profile/index";
+import { getAppSecret as getAppSecretIos } from "./ios/inject-sdk-ios";
 
 export async function getRemoteApp(client: MobileCenterClient,
   appName: string,
   os: string,
   platform: string,
-  createNew: boolean): Promise<IRemoteApp> {
+  createNew: boolean,
+  appDir: string): Promise<IRemoteApp> {
 
   out.text("");
   out.text("It's time to specify which Mobile Center app");
@@ -20,6 +22,11 @@ export async function getRemoteApp(client: MobileCenterClient,
     apps = apps.filter(app =>
       !os || app.os === os &&
       !platform || app.platform === platform);
+
+    const appSecret = await getAppSecret(os, appDir);
+    if (appSecret) {
+      apps = apps.sort((a,b) => b.appSecret === appSecret ? 1 : 0);
+    }
 
     appName = await inquireAppName(apps, appName);
 
@@ -37,6 +44,13 @@ export async function getRemoteApp(client: MobileCenterClient,
     out.text(`A new ${app.ownerName}/${app.appName} (${app.os}/${app.platform}) app`);
     out.text("has been succesfully created on the Mobile Center portal.");
     return app;
+  }
+}
+
+async function getAppSecret(os: string, appDir: string) {
+  switch (os) {
+    case "android": return null;
+    case "iOS": return await getAppSecretIos(appDir);
   }
 }
 

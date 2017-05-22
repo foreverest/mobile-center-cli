@@ -4,10 +4,8 @@ import * as Glob from "glob";
 import * as Helpers from "../../../../util/misc/helpers";
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
 import { SdkIntegrationError } from "../../util/sdk-integration";
-import { AddCocoapodsDependencies } from "./add-cocoapods-dependencies";
 
 export class SearchProjectPaths extends XcodeSdkIntegrationStep {
-  public nextStep = new AddCocoapodsDependencies();
   protected step() {
     const projectOrWorkspacePath = this.context.projectOrWorkspacePath || this.findXcodeProjectDirectory()
     this.context.projectRootDirectory = Path.join(projectOrWorkspacePath, "../");

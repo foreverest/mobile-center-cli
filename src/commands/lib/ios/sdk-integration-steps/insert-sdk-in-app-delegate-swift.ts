@@ -16,7 +16,7 @@ export class InsertSdkInAppDelegateSwift extends XcodeSdkIntegrationStep {
     this.context.enqueueAction(() => FS.writeTextFile(this.context.appDelegateFile, appDelegateContent, "utf8"));
   }
 
-  private analyze(appDelegateContent: string): TextWalkerSwiftInjectBag {
+  protected analyze(appDelegateContent: string): TextWalkerSwiftInjectBag {
     const textWalker = new CodeWalker(appDelegateContent, new TextWalkerSwiftInjectBag());
     textWalker.addTrap(bag =>
       bag.blockLevel === 0

@@ -147,7 +147,7 @@ export default class IntegrateSDKCommand extends Command {
 
       const remoteApp = this.nonInteractive ?
         await getRemoteAppNonInteractive(client, this.appName, os, platform, this.createNew) :
-        await getRemoteApp(client, this.appName, os, platform, this.createNew);
+        await getRemoteApp(client, this.appName, os, platform, this.createNew, appDir);
         
       if (!localApp) {
         localApp = {

@@ -3,10 +3,8 @@ import * as FS from "async-file";
 import * as Helpers from "../../../../util/misc/helpers";
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
 import { SdkIntegrationError } from "../../util/sdk-integration";
-import { SearchAppDelegateFile } from "./search-app-delegate-file";
 
 export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
-  public nextStep = new SearchAppDelegateFile();
   protected async step() {
     this.context.podfilePath = this.context.podfilePath || Path.join(this.context.projectRootDirectory, "Podfile");
 

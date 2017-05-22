@@ -11,13 +11,11 @@ import { MobileCenterSdkModule } from "../../../../../src/commands/lib/models/mo
 
 describe("InsertSdkInAppDelegateObjectiveC", () => {
   async function runStep(content: string, sdkModules: MobileCenterSdkModule) {
-    const step = new InsertSdkInAppDelegateObjectiveC();
-    step.nextStep = null;
     const appDelegatePath = Path.join(Os.tmpdir(), Math.random() * 10000000 + "-AppDelegate.m");
     await Fs.writeTextFile(appDelegatePath, content);
     const context = new XcodeIntegrationStepContext(null, null, "***", sdkModules, null);
     context.appDelegateFile = appDelegatePath;
-    await step.run(context);
+    await new InsertSdkInAppDelegateObjectiveC().run(context);
     await context.runActions();
     return await Fs.readTextFile(appDelegatePath);
   }

@@ -1,22 +1,14 @@
 import { MobileCenterSdkModule } from "../models/mobilecenter-sdk-module";
 
 export abstract class SdkIntegrationStepBase<T> {
-  public nextStep: SdkIntegrationStepBase<T>;
   protected context: T;
 
   public async run(context: T): Promise<void> {
     this.context = context;
     await this.step();
-    await this.runNextStep();
   }
 
   protected abstract step(): any;
-
-  private runNextStep(): Promise<void> {
-    if (this.nextStep) {
-      return this.nextStep.run(this.context);
-    }
-  }
 }
 
 export class SdkIntegrationError extends Error {

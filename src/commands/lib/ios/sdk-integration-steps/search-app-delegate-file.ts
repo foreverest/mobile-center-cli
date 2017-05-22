@@ -4,8 +4,6 @@ import * as Glob from "glob";
 import * as Helpers from "../../../../util/misc/helpers";
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
 import { SdkIntegrationError } from "../../util/sdk-integration";
-import { InsertSdkInAppDelegateObjectiveC } from "./insert-sdk-in-app-delegate-objective-c";
-import { InsertSdkInAppDelegateSwift } from "./insert-sdk-in-app-delegate-swift";
 
 export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
   protected async step() {
@@ -18,11 +16,6 @@ export class SearchAppDelegateFile extends XcodeSdkIntegrationStep {
     }
 
     this.context.appDelegateFile = path;
-    if (this.context.appDelegateFile.endsWith(".swift")) {
-      this.nextStep = new InsertSdkInAppDelegateSwift();
-    } else {
-      this.nextStep = new InsertSdkInAppDelegateObjectiveC();
-    }
   }
 
   private async searchInFiles(ext: string, isAppDelegateFile: (path: string) => Promise<boolean>): Promise<string> {

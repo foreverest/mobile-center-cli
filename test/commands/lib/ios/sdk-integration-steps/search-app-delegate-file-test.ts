@@ -18,9 +18,6 @@ describe("SearchAppDelegateFile", () => {
   const tempDirPath = Path.join(Os.tmpdir(), Math.random() * 100000000 + "-SearchAppDelegateFileTest");
 
   async function runStep(pathContentList: PathContent[]) {
-    const step = new SearchAppDelegateFile();
-    step.nextStep = null;
-
     await Fs.createDirectory(tempDirPath);
     const context = new XcodeIntegrationStepContext(null, null, "***", MobileCenterSdkModule.All, null);
     context.projectRootDirectory = tempDirPath;
@@ -31,7 +28,7 @@ describe("SearchAppDelegateFile", () => {
       await Fs.writeTextFile(path, pathContent.content);
     }
 
-    await step.run(context)
+    await new SearchAppDelegateFile().run(context)
     return Path.relative(tempDirPath, context.appDelegateFile);
   };
 

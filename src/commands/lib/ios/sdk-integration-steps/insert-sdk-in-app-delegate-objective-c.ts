@@ -16,7 +16,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
     this.context.enqueueAction(() => FS.writeTextFile(this.context.appDelegateFile, appDelegateContent, "utf8"));
   }
 
-  private analyze(appDelegateContent: string): TextWalkerObjectiveCInjectBag {
+  protected analyze(appDelegateContent: string): TextWalkerObjectiveCInjectBag {
     const textWalker = new CodeWalker(appDelegateContent, new TextWalkerObjectiveCInjectBag());
     textWalker.addTrap(bag =>
       bag.blockLevel === 0
@@ -72,7 +72,7 @@ export class InsertSdkInAppDelegateObjectiveC extends XcodeSdkIntegrationStep {
         && bag.msMobileCenterStartCallStartIndex < 0
         && /^\[\s*?MSMobileCenter\s+?start/.test(textWalker.forepart),
       bag => {
-        let match = /^\[\s*?MSMobileCenter\s+?start\s*?:[\s\S]+?withServices[\s\S]+?\]\s*\]\s*?;/.exec(textWalker.forepart);
+        let match = /^\[\s*MSMobileCenter\s+?start\s*:\s*@"([\s\S]+?)"\s+withServices[\s\S]+?\]\s*\]\s*;/.exec(textWalker.forepart);
         if (match) {
           bag.msMobileCenterStartCallStartIndex = textWalker.position;
           bag.msMobileCenterStartCallLength = match[0].length;
