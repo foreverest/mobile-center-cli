@@ -4,10 +4,11 @@ import * as Fs from "async-file";
 import * as Path from "path";
 import * as Mkdirp from "mkdirp";
 import * as Rimraf from "rimraf";
-
+import * as _ from "lodash";
+import { assertModulesIntegrated, forEachModules } from "./helpers";
 import { InsertSdkInAppDelegateSwift } from "../../../../../src/commands/lib/ios/sdk-integration-steps/insert-sdk-in-app-delegate-swift";
 import { XcodeIntegrationStepContext } from "../../../../../src/commands/lib/ios/xcode-sdk-integration";
-import { MobileCenterSdkModule } from "../../../../../src/commands/lib/models/mobilecenter-sdk-module";
+import { MobileCenterSdkModule, getMobileCenterSdkModulesArray } from "../../../../../src/commands/lib/models/mobilecenter-sdk-module";
 
 describe("InsertSdkInAppDelegateSwift", () => {
   async function runStep(content: string, sdkModules: MobileCenterSdkModule) {
@@ -33,86 +34,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }`;
   }
 
-  it("Insert", async function () {
-    const content = await runStep(appDelegateTemplate(), MobileCenterSdkModule.All);
+  function assertModulesIntegratedSwift(content: string, modules: MobileCenterSdkModule) {
+    return assertModulesIntegrated(content, modules, moduleName => "import MobileCenter" + moduleName, modulesArray => `
+        MSMobileCenter.start("***", withServices: [${modulesArray.map(x => `MS${MobileCenterSdkModule[x]}.self`).join(", ")}])`,
+      appDelegateTemplate);
+  }
 
-    expect(content).to.eq(appDelegateTemplate(`
-import MobileCenter
-import MobileCenterAnalytics
-import MobileCenterCrashes
-import MobileCenterDistribute`, `
-        MSMobileCenter.start("***", withServices: [MSAnalytics.self, MSCrashes.self, MSDistribute.self])`));
+  describe("Insert", () => {
+    forEachModules((modules, modulesNames) => {
+      it(modulesNames, async function () {
+        const content = await runStep(appDelegateTemplate(), modules);
+        assertModulesIntegratedSwift(content, modules);
+      });
+    });
   });
 
-  describe("Update", () => {
-    const testContent = appDelegateTemplate(`
-import MobileCenter
-import MobileCenterAnalytics
-import MobileCenterCrashes
-import MobileCenterDistribute`, `
-        MSMobileCenter.start("***", withServices: [MSAnalytics.self, MSCrashes.self, MSDistribute.self])`);
+  describe("Update", async () => {
+    let allModulesContent: string;
 
-    it("#1", async function () {
-      let content = await runStep(testContent, MobileCenterSdkModule.Analytics | MobileCenterSdkModule.Distribute);
-      expect(content).to.eq(appDelegateTemplate(`
-import MobileCenter
-import MobileCenterAnalytics
-import MobileCenterDistribute`, `
-        MSMobileCenter.start("***", withServices: [MSAnalytics.self, MSDistribute.self])`));
+    before(async () => allModulesContent = await runStep(appDelegateTemplate(), MobileCenterSdkModule.All));
 
-      content = await runStep(content, MobileCenterSdkModule.Crashes);
-      content = await runStep(content, MobileCenterSdkModule.All);
-
-      expect(moveLine(content, 2, 3)).to.eq(testContent)
+    forEachModules((modules, modulesNames) => {
+      it(modulesNames, async function () {
+        const content = await runStep(allModulesContent, modules);
+        assertModulesIntegratedSwift(content, modules);
+      });
     });
-
-    it("#2", async function () {
-      let  content = await runStep(testContent, MobileCenterSdkModule.Analytics | MobileCenterSdkModule.Crashes);
-      expect(content).to.eq(appDelegateTemplate(`
-import MobileCenter
-import MobileCenterAnalytics
-import MobileCenterCrashes`, `
-        MSMobileCenter.start("***", withServices: [MSAnalytics.self, MSCrashes.self])`));
-
-      content = await runStep(content, MobileCenterSdkModule.Distribute);
-      content = await runStep(content, MobileCenterSdkModule.All);
-
-      expect(moveLine(content, 2, 4)).to.eq(testContent)
-    });
-
-    it("#3", async function () {
-      let content = await runStep(testContent, MobileCenterSdkModule.Crashes | MobileCenterSdkModule.Distribute);
-      expect(content).to.eq(appDelegateTemplate(`
-import MobileCenter
-import MobileCenterCrashes
-import MobileCenterDistribute`, `
-        MSMobileCenter.start("***", withServices: [MSCrashes.self, MSDistribute.self])`))
-
-      content = await runStep(content, MobileCenterSdkModule.Analytics);
-      content = await runStep(content, MobileCenterSdkModule.All);
-
-      expect(content).to.eq(testContent)
-    });
-
-    it("#4", async function () {
-      let content = await runStep(testContent, MobileCenterSdkModule.Analytics);
-      expect(content).to.eq(appDelegateTemplate(`
-import MobileCenter
-import MobileCenterAnalytics`, `
-        MSMobileCenter.start("***", withServices: [MSAnalytics.self])`));
-
-      content = await runStep(content, MobileCenterSdkModule.Crashes | MobileCenterSdkModule.Distribute);
-      content = await runStep(content, MobileCenterSdkModule.All);
-
-      expect(moveLine(content, 4, 2)).to.eq(testContent)
-    });
-
-    function moveLine(text: string, fromIndex: number, toIndex: number) {
-      const array = text.split("\n");
-      const element = array[fromIndex];
-      array.splice(fromIndex, 1);
-      array.splice(toIndex, 0, element);
-      return array.join("\n");
-    }
   });
 });
