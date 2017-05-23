@@ -51,6 +51,7 @@
     "typescript": "^2.3.2"
   },
   "dependencies": {
+	"async-file": "^2.0.2",
     "azure-storage": "^2.1.0",
     "bplist": "0.0.4",
     "cli-spinner": "^0.2.5",
