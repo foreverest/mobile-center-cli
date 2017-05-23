@@ -27,6 +27,10 @@ export async function getAppSecret(rootPath: string) {
   const context = new XcodeIntegrationStepContext(null, null, null, null, null);
   context.rootPath = rootPath;
   await new SearchProjectPaths().run(context);
+  if (!context.projectRootDirectory) {
+    return null;
+  }
+
   await new SearchAppDelegateFile().run(context);
   if (!context.appDelegateFile) {
     return null;
