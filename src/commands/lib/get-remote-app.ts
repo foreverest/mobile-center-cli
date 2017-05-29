@@ -20,8 +20,8 @@ export async function getRemoteApp(client: MobileCenterClient,
   if (!createNew) {
     let apps = await fetchApps(client);
     apps = apps.filter(app =>
-      !os || app.os === os &&
-      !platform || app.platform === platform);
+      (!os || app.os.toLowerCase() === os.toLowerCase()) &&
+      (!platform || app.platform.toLowerCase() === platform.toLowerCase()))
 
     const appSecret = await getAppSecret(os, appDir);
     if (appSecret) {

@@ -111,8 +111,8 @@ export async function getProjectDescriptionNonInteractive(client: MobileCenterCl
   }
 
   if (remoteApp.os.toLowerCase() === "ios" && remoteApp.platform.toLowerCase() === "objective-c-swift") {
-    if (!androidModule || !androidBuildVariant)
-      throw failure(ErrorCodes.IllegalCommand, "You must specify --ios-project-path and --ios-podfile-path arguments.");
+    if (!iosProjectPath)
+      throw failure(ErrorCodes.IllegalCommand, "You must specify --ios-project-path argument.");
     return {
       projectOrWorkspacePath: iosProjectPath,
       podfilePath: iosPodfilePath
@@ -263,7 +263,7 @@ async function findGradleModules(dir: string): Promise<string[]> {
 }
 
 async function findProjectsAndWorkspaces(dir: string): Promise<string[]> {
-  let dirs = await glob(path.join(dir, "*.*(xcworkspace|xcodeproj)/"));
+  let dirs = await glob(path.join(dir, "**/*.*(xcworkspace|xcodeproj)/"));
 
   const xcworkspaceDirs = dirs
     .filter(x => path.extname(x).toLowerCase() === ".xcworkspace")
