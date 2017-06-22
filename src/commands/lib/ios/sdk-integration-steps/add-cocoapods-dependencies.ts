@@ -1,4 +1,5 @@
 import * as Path from "path";
+import * as Semver from "semver";
 import * as FS from "async-file";
 import * as Helpers from "../../../../util/misc/helpers";
 import { XcodeSdkIntegrationStep, XcodeIntegrationStepContext } from "../xcode-sdk-integration";
@@ -10,11 +11,15 @@ export class AddCocoapodsDependencies extends XcodeSdkIntegrationStep {
 
     let content = await this.getContent(this.context.podfilePath);
     content = this.addOrRemoveService(content, `MobileCenter`, false);
-    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterAnalytics`, this.context.analyticsEnabled);
-    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterCrashes`, this.context.crashesEnabled);
-    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterDistribute`, this.context.distributeEnabled);
-    content = this.addOrRemoveService(content, `MobileCenter/MobileCenterPush`, this.context.pushEnabled);
-   
+
+    const subSpecPrefix = (Semver.valid(this.context.sdkVersion) &&
+      Semver.gte(this.context.sdkVersion, "0.10.0", true)) ? "" : "MobileCenter";
+
+    content = this.addOrRemoveService(content, `MobileCenter/${subSpecPrefix}Analytics`, this.context.analyticsEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter/${subSpecPrefix}Crashes`, this.context.crashesEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter/${subSpecPrefix}Distribute`, this.context.distributeEnabled);
+    content = this.addOrRemoveService(content, `MobileCenter/${subSpecPrefix}Push`, this.context.pushEnabled);
+
     this.context.enqueueAction(() => FS.writeTextFile(this.context.podfilePath, content, "utf8"));
   }
 
