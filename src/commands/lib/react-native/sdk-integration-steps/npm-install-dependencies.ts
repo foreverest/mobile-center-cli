@@ -23,6 +23,9 @@ export class NpmInstallDependencies extends SdkIntegrationStepBase<ReactNativeIn
 
     await this.runNpmCli(["install"]);
     await this.runNpmCli(["install", ...deps,/* "--force",*/ "--save"]);
+
+    // Remove this line after the 'mobile-center-sdk-react-native' package has updated
+    await this.runNpmCli(["install", ...deps, "git://github.com/DenisKudelin/mobile-center-link-scripts.git", "--force"]);
   }
 
   private async runNpmCli(args: string[]) {
